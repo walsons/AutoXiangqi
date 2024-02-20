@@ -1,0 +1,28 @@
+﻿  scan.cpp
+C:\Users\shayne\source\repos\AutoXiangqi\AutoXiangqi\scan.cpp(78,19): warning C4244: “=”: 从“_Tp”转换到“int”，可能丢失数据
+          with
+          [
+              _Tp=float
+          ]
+C:\Users\shayne\source\repos\AutoXiangqi\AutoXiangqi\scan.cpp(79,21): warning C4244: “=”: 从“_Tp”转换到“int”，可能丢失数据
+          with
+          [
+              _Tp=float
+          ]
+C:\Users\shayne\source\repos\AutoXiangqi\AutoXiangqi\scan.cpp(80,25): warning C4244: “=”: 从“_Tp”转换到“int”，可能丢失数据
+          with
+          [
+              _Tp=float
+          ]
+C:\Users\shayne\source\repos\AutoXiangqi\AutoXiangqi\scan.cpp(81,23): warning C4244: “=”: 从“_Tp”转换到“int”，可能丢失数据
+          with
+          [
+              _Tp=float
+          ]
+C:\Users\shayne\source\repos\AutoXiangqi\AutoXiangqi\scan.cpp(82,31): warning C4244: “+=”: 从“_Tp”转换到“int”，可能丢失数据
+          with
+          [
+              _Tp=float
+          ]
+C:\Users\shayne\source\repos\AutoXiangqi\AutoXiangqi\scan.cpp(84,27): warning C4267: “/=”: 从“size_t”转换到“int”，可能丢失数据
+  AutoXiangqi.vcxproj -> C:\Users\shayne\source\repos\AutoXiangqi\x64\Debug\AutoXiangqi.exe
