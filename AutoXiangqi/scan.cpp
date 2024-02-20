@@ -212,62 +212,70 @@ void MakePieceFingerPrint(std::unordered_map<std::string, Mat>& PieceID)
     /***** Finger print for red *****/
     // r: 车 [9][0]
     rect = Rect(b[9][0].x - r, b[9][0].y - r, 2 * r, 2 * r);
-    Mat rRedMat = src(rect);
-    PieceID["rRed"] = rRedMat;
+    PieceID["R"] = src(rect);;
     // n: 马 [9][1]
     rect = Rect(b[9][1].x - r, b[9][1].y - r, 2 * r, 2 * r);
-    Mat nRedMat = src(rect);
-    PieceID["nRed"] = nRedMat;
+    PieceID["N"] = src(rect);
     // b: 象 [9][2]
     rect = Rect(b[9][2].x - r, b[9][2].y - r, 2 * r, 2 * r);
-    Mat bRedMat = src(rect);
-    PieceID["bRed"] = bRedMat;
+    PieceID["B"] = src(rect);
     // a: 仕 [9][3]
     rect = Rect(b[9][3].x - r, b[9][3].y - r, 2 * r, 2 * r);
-    Mat aRedMat = src(rect);
-    PieceID["aRed"] = aRedMat;
+    PieceID["A"] = src(rect);
     // k: 帅 [9][4]
     rect = Rect(b[9][4].x - r, b[9][4].y - r, 2 * r, 2 * r);
-    Mat kRedMat = src(rect);
-    PieceID["kRed"] = kRedMat;
+    PieceID["K"] = src(rect);
     // c: 炮 [7][1]
     rect = Rect(b[7][1].x - r, b[7][1].y - r, 2 * r, 2 * r);
-    Mat cRedMat = src(rect);
-    PieceID["cRed"] = cRedMat;
+    PieceID["C"] = src(rect);
     // p: 兵 [6][0]
     rect = Rect(b[6][0].x - r, b[6][0].y - r, 2 * r, 2 * r);
-    Mat pRedMat = src(rect);
-    PieceID["pRed"] = pRedMat;
+    PieceID["P"] = src(rect);
 
     /***** Finger print for black *****/
     // r: 车 [0][0]
     rect = Rect(b[0][0].x - r, b[0][0].y - r, 2 * r, 2 * r);
-    Mat rBlackMat = src(rect);
-    PieceID["rBlack"] = rBlackMat;
+    PieceID["r"] = src(rect);
     // n: 马 [0][1]
     rect = Rect(b[0][1].x - r, b[0][1].y - r, 2 * r, 2 * r);
-    Mat nBlackMat = src(rect);
-    PieceID["nBlack"] = nBlackMat;
+    PieceID["n"] = src(rect);
     // b: 相 [0][2]
     rect = Rect(b[0][2].x - r, b[0][2].y - r, 2 * r, 2 * r);
-    Mat bBlackMat = src(rect);
-    PieceID["bBlack"] = bBlackMat;
+    PieceID["b"] = src(rect);
     // a: 士 [0][3]
     rect = Rect(b[0][3].x - r, b[0][3].y - r, 2 * r, 2 * r);
-    Mat aBlackMat = src(rect);
-    PieceID["aBlack"] = aBlackMat;
+    PieceID["a"] = src(rect);
     // k: 将 [0][4]
     rect = Rect(b[0][4].x - r, b[0][4].y - r, 2 * r, 2 * r);
-    Mat kBlackMat = src(rect);
-    PieceID["kBlack"] = kBlackMat;
+    PieceID["k"] = src(rect);
     // c: 砲 [2][1]
     rect = Rect(b[2][1].x - r, b[2][1].y - r, 2 * r, 2 * r);
-    Mat cBlackMat = src(rect);
-    PieceID["cBlack"] = cBlackMat;
+    PieceID["c"] = src(rect);
     // p: 卒 [3][0]
     rect = Rect(b[3][0].x - r, b[3][0].y - r, 2 * r, 2 * r);
-    Mat pBlackMat = src(rect);
-    PieceID["pBlack"] = pBlackMat;
+    PieceID["p"] = src(rect);
+
+    /***** Finger print for blank *****/
+    rect = Rect(b[4][0].x - r, b[4][0].y - r, 2 * r, 2 * r);
+    PieceID["blank1"] = src(rect);
+    rect = Rect(b[4][2].x - r, b[4][2].y - r, 2 * r, 2 * r);
+    PieceID["blank2"] = src(rect);
+    rect = Rect(b[4][4].x - r, b[4][4].y - r, 2 * r, 2 * r);
+    PieceID["blank3"] = src(rect);
+    rect = Rect(b[4][6].x - r, b[4][6].y - r, 2 * r, 2 * r);
+    PieceID["blank4"] = src(rect);
+    rect = Rect(b[4][8].x - r, b[4][8].y - r, 2 * r, 2 * r);
+    PieceID["blank5"] = src(rect);
+    rect = Rect(b[5][0].x - r, b[5][0].y - r, 2 * r, 2 * r);
+    PieceID["blank6"] = src(rect);
+    rect = Rect(b[5][2].x - r, b[5][2].y - r, 2 * r, 2 * r);
+    PieceID["blank7"] = src(rect);
+    rect = Rect(b[5][4].x - r, b[5][4].y - r, 2 * r, 2 * r);
+    PieceID["blank8"] = src(rect);
+    rect = Rect(b[5][6].x - r, b[5][6].y - r, 2 * r, 2 * r);
+    PieceID["blank9"] = src(rect);
+    rect = Rect(b[5][8].x - r, b[5][8].y - r, 2 * r, 2 * r);
+    PieceID["blank10"] = src(rect);
 }
 
 BITMAPINFOHEADER createBitmapHeader(int width, int height)
@@ -381,8 +389,54 @@ int similarityScore(const Mat& img1, const Mat& img2 )
     return minHDistance + minVDistance;
 }
 
-void Board2Fen(const Mat& img, std::unordered_map<std::string, Mat>& pieceID)
+int similarityScoreV2(const Mat& img1, const Mat& img2)
 {
+    Mat img_gray1;
+    cvtColor(img1, img_gray1, COLOR_RGB2GRAY);
+    //img_gray1 = img_gray1(Range(img_gray1.rows / 5, img_gray1.rows * 4 / 5), Range(img_gray1.cols / 5, img_gray1.cols * 4 / 5));
+    Mat img_gray2;
+    cvtColor(img2, img_gray2, COLOR_RGB2GRAY);
+    //img_gray2 = img_gray2(Range(img_gray2.rows / 5, img_gray2.rows * 4 / 5), Range(img_gray2.cols / 5, img_gray2.cols * 4 / 5));
+
+    Mat ig1 = img_gray1(Range(img_gray1.rows / 4, img_gray1.rows * 3 / 4), Range(img_gray1.cols / 4, img_gray1.cols * 3 / 4));
+    //std::cout << "ig1.size()" << ig1.size() << std::endl;
+    int interval = 5;
+    int row = ig1.rows / interval + ((ig1.rows % interval) > 0 ? 1 : 0);
+    int col = ig1.cols / interval + ((ig1.rows % interval) > 0 ? 1 : 0);
+    std::vector<std::vector<int>> arr(row, std::vector<int>(col, 0));
+    for (int i = 0; i < row; ++i)
+    {
+        for (int j = 0; j < col; ++j)
+        {
+            arr[i][j] = ig1.at<uchar>(interval * i, interval * j);
+        }
+    }
+    ////////////////
+    int minScore = 0x0FFFFFFF;
+    for (int i = 0; i < img_gray2.rows - ig1.rows + 1; ++i)
+    {
+        for (int j = 0; j < img_gray2.cols - ig1.cols + 1; ++j)
+        {
+            /*****/
+            Mat ig2 = img_gray2(Range(i, i + ig1.rows), Range(j, j + ig1.cols));
+            int score = 0;
+            for (int x = 0; x < row; ++x)
+            {
+                for (int y = 0; y < col; ++y)
+                {
+                    score += abs(arr[x][y] - ig2.at<uchar>(interval * x, interval * y));
+                }
+            }
+            minScore = minScore < score ? minScore : score;
+            /*****/
+        }
+    }
+    return minScore;
+}
+
+std::string Board2Fen(const Mat& img, std::unordered_map<std::string, Mat>& pieceID)
+{
+    std::string fen;
     XiangqiPoint b[10][9];
     int hStep = (g_Right - g_Left) / 8;
     int vStep = (g_Bottom - g_Top) / 9;
@@ -399,7 +453,7 @@ void Board2Fen(const Mat& img, std::unordered_map<std::string, Mat>& pieceID)
             Mat targetImg;
             for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
             {
-                int score = similarityScore(onePiece, it->second);
+                int score = similarityScoreV2(onePiece, it->second);
                 if (score < minValue)
                 {
                     minValue = score;
@@ -421,9 +475,21 @@ void Board2Fen(const Mat& img, std::unordered_map<std::string, Mat>& pieceID)
                 imshow("dd3", targetImg);
                 waitKey();
             }*/
-            std::cout << "minValue: " << minValue << " -----------  " << "target: " << target << std::endl;
+            //std::cout << "minValue: " << minValue << " -----------  " << "target: " << target << std::endl;
+            if (target.size() == 1)
+                fen += target;
+            else
+            {
+                if (fen.empty() || (fen.back() < '0' || fen.back() >= '9'))
+                    fen += "1";
+                else
+                    fen.back() = fen.back() + 1;
+            }
         }
+        fen += "/";
     }
+    fen.pop_back();
+    return fen;
 }
 
 

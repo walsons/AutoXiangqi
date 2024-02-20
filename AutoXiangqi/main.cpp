@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <unordered_map>
+#include <algorithm>
 
 #include "scan.h"
 
@@ -219,7 +220,7 @@ double GetScale()
 	return dpi;
 }
 
-void sc(const POINT& topLeft, const POINT& bottomRight, std::unordered_map<std::string, cv::Mat>& pieceID)
+std::string sc(const POINT& topLeft, const POINT& bottomRight, std::unordered_map<std::string, cv::Mat>& pieceID)
 {
 	HDC hScreenDC = GetDC(NULL);
 	HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
@@ -246,7 +247,7 @@ void sc(const POINT& topLeft, const POINT& bottomRight, std::unordered_map<std::
 	// 转换为Mat类型
 	cv::Mat img(height, width, CV_8UC3, buf.data());
 
-	Board2Fen(img, pieceID);
+	return Board2Fen(img, pieceID);
 }
 
 //int WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
@@ -296,7 +297,7 @@ int main()
 	std::string chesser;
 	while (true)
 	{
-		fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
+		/*fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
 		chesser = "w";
 		Write("position fen " + fen + " " + chesser + " - - 0 1\n");
 		Write("go depth 10\n");
@@ -314,25 +315,31 @@ int main()
 				break;
 			}
 		}
-		std::cout << "bestMove: " << bestMove << std::endl;
+		std::cout << "bestMove: " << bestMove << std::endl;*/
 
 		// -------------------------
 		break;
 	}
 
-	Write("quit\n");
+	// Write("quit\n");
 	
 	POINT topLeft = { 0, 0 };
 	POINT bottomRight = { 0, 0 };
 	std::string pointCmd;
 	std::cout << "Please put the mouse in the top left, input tl to go" << std::endl;
-	std::cin >> pointCmd;
-	if (pointCmd == "tl");
+	while (std::cin >> pointCmd)
+	{
+		if (pointCmd == "tl")
+			break;
+	}
 	if (GetCursorPos(&topLeft))
 		std::cout << "topLeft point: " << topLeft.x << ", " << topLeft.y << std::endl;
 	std::cout << "Please put the mouse in the bottom right, input br to go" << std::endl;
-	std::cin >> pointCmd;
-	if (pointCmd == "br");
+	while (std::cin >> pointCmd)
+	{
+		if (pointCmd == "br")
+			break;
+	}
 	if (GetCursorPos(&bottomRight))
 		std::cout << "bottomRight point: " << bottomRight.x << ", " << bottomRight.y << std::endl;
 
@@ -367,11 +374,94 @@ int main()
 	std::unordered_map<std::string, cv::Mat> pieceID;
 	MakePieceFingerPrint(pieceID);
 
-	while (true)
+	std::cout << "Input \"go\" to start game" << std::endl;
+	while (std::cin >> pointCmd)
 	{
-		// Scan board to fen
-		sc(topLeft, bottomRight, pieceID);
-		break;
+		if (pointCmd == "go")
+			break;
+	}
+
+	while (std::cin >> pointCmd)
+	{
+		if (pointCmd == "ngr")
+		{
+			chesser = "w";
+			Write("ucinewgame\n");
+		}
+		if (pointCmd == "ngb")
+		{
+			chesser = "b";
+			Write("ucinewgame\n");
+		}
+		else if (pointCmd == "n")  // next
+		{
+			// Scan board to fen
+			std::string fen = sc(topLeft, bottomRight, pieceID);
+			if (chesser == "b")
+				std::reverse(fen.begin(), fen.end());
+			//fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
+			//chesser = "w";
+			Write("position fen " + fen + " " + chesser + " - - 0 1\n");
+			std::cout << ("position fen " + fen + " " + chesser + " - - 0 1") << std::endl;
+			Write("go depth 10\n");
+			std::string bestMove;
+			while (true)
+			{
+				std::string output;
+				Read(engineOutput, BuffSize, readBytes);
+				engineOutput[readBytes] = '\0';
+				output += engineOutput;
+				auto pos = output.find("bestmove");
+				if (pos != std::string::npos && (pos + std::string("bestmove xxxx").size() <= output.size()))
+				{
+					bestMove = output.substr(pos + std::string("bestmove ").size(), std::string("xxxx").size());
+					break;
+				}
+			}
+			if (chesser == "b")
+			{
+				std::cout << "bestMove: " << bestMove << std::endl;
+				for (auto& c : bestMove)
+				{
+					switch (c)
+					{
+					case 'a':
+						c = 'i';
+						break;
+					case 'b':
+						c = 'h';
+						break;
+					case 'c':
+						c = 'g';
+						break;
+					case 'd':
+						c = 'f';
+						break;
+					case 'e':
+						c = 'e';
+						break;
+					case 'f':
+						c = 'd';
+						break;
+					case 'g':
+						c = 'c';
+						break;
+					case 'h':
+						c = 'b';
+						break;
+					case 'i':
+						c = 'a';
+						break;
+					default:
+						c = (9 - (c - '0')) + '0';
+						break;
+					}
+				}
+				std::cout << "black bestMove: " << bestMove << std::endl;
+			}
+			else
+				std::cout << "red bestMove: " << bestMove << std::endl;
+		}
 	}
 	
 

@@ -14,4 +14,4 @@ void MakePieceFingerPrint(std::unordered_map<std::string, cv::Mat>& PieceID);
 
 cv::Mat GetCaptureScreen(HWND hwnd);
 
-void Board2Fen(const cv::Mat& img, std::unordered_map<std::string, cv::Mat>& pieceID);
+std::string Board2Fen(const cv::Mat& img, std::unordered_map<std::string, cv::Mat>& pieceID);
