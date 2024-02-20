@@ -420,7 +420,6 @@ int main()
 			}
 			if (chesser == "b")
 			{
-				std::cout << "bestMove: " << bestMove << std::endl;
 				for (auto& c : bestMove)
 				{
 					switch (c)
