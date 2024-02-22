@@ -5,5 +5,6 @@ C:\Users\shayne\Desktop\AutoXiangqi\AutoXiangqi\main.cpp(169,40): warning C4302:
 C:\Users\shayne\Desktop\AutoXiangqi\AutoXiangqi\main.cpp(170,52): warning C4311: “类型强制转换”: 从“HWND”到“int”的指针截断
 C:\Users\shayne\Desktop\AutoXiangqi\AutoXiangqi\main.cpp(170,52): warning C4302: “类型强制转换”: 从“HWND”到“int”截断
 C:\Users\shayne\Desktop\AutoXiangqi\AutoXiangqi\main.cpp(227,10): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
-C:\Users\shayne\Desktop\AutoXiangqi\AutoXiangqi\main.cpp(349,10): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+C:\Users\shayne\Desktop\AutoXiangqi\AutoXiangqi\main.cpp(332,10): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+C:\Users\shayne\Desktop\AutoXiangqi\AutoXiangqi\scan.h(53): warning C4715: “ChessTools::MoveXiangqiPiece”: 不是所有的控件路径都返回值
   AutoXiangqi.vcxproj -> C:\Users\shayne\Desktop\AutoXiangqi\x64\Debug\AutoXiangqi.exe

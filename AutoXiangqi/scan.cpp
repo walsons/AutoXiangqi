@@ -1,6 +1,7 @@
 #include "scan.h"
 #include <vector>
 #include <Windows.h>
+#include <ctime>
 
 using namespace cv;
 
@@ -84,15 +85,11 @@ void FindAllPiece(int& top, int& left, int& bottom, int& right, int& radius)
     radius /= circles.size();
 }
 
-struct XiangqiPoint
-{
-    int x;
-    int y;
-};
+
 
 int g_Top = 0, g_Left = 0, g_Bottom = 0, g_Right = 0;
 int g_Radius = 0;
-
+XiangqiPoint g_board[10][9];
 void SetCorrdinate(XiangqiPoint board[10][9], int& radius)
 {
     //int top = 0, left = 0, bottom = 0, right = 0;
@@ -106,6 +103,7 @@ void SetCorrdinate(XiangqiPoint board[10][9], int& radius)
         for (int j = 0; j < 9; ++j)
         {
             board[i][j] = XiangqiPoint{ g_Left + j * hStep, g_Top + i * vStep };
+            g_board[i][j] = XiangqiPoint{ g_Left + j * hStep, g_Top + i * vStep };
         }
     }
 }
@@ -434,8 +432,11 @@ int similarityScoreV2(const Mat& img1, const Mat& img2)
     return minScore;
 }
 
+BoardPointInfo boardPointInfo[10][9];
+
 std::string Board2Fen(const Mat& img, std::unordered_map<std::string, Mat>& pieceID)
 {
+    clock_t begin = clock();
     std::string fen;
     XiangqiPoint b[10][9];
     int hStep = (g_Right - g_Left) / 8;
@@ -451,16 +452,32 @@ std::string Board2Fen(const Mat& img, std::unordered_map<std::string, Mat>& piec
             int minValue = 0x0FFFFFFF;
             std::string target;
             Mat targetImg;
-            for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
+
+            // a method to accelerate
+            Mat possiblePiece = pieceID[boardPointInfo[i][j].name];
+            int outScore = similarityScoreV2(onePiece, possiblePiece);
+            int diff = outScore * 0.05;
+            if (outScore - diff < boardPointInfo[i][j].score && outScore + diff > boardPointInfo[i][j].score)
             {
-                int score = similarityScoreV2(onePiece, it->second);
-                if (score < minValue)
+                minValue = outScore;
+                target = boardPointInfo[i][j].name;
+                targetImg = pieceID[boardPointInfo[i][j].name];
+            }
+            else
+            {
+                for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
                 {
-                    minValue = score;
-                    target = it->first;
-                    targetImg = it->second;
+                    int score = similarityScoreV2(onePiece, it->second);
+                    if (score < minValue)
+                    {
+                        minValue = score;
+                        target = it->first;
+                        targetImg = it->second;
+                    }
                 }
             }
+            boardPointInfo[i][j].name = target;
+            boardPointInfo[i][j].score = minValue;
             /*if (i == 0 && j == 6)
             {
                 imshow("dd", onePiece);
@@ -489,6 +506,8 @@ std::string Board2Fen(const Mat& img, std::unordered_map<std::string, Mat>& piec
         fen += "/";
     }
     fen.pop_back();
+    clock_t end = clock();
+    std::cout << "time cost: " << (end - begin) << std::endl;
     return fen;
 }
 

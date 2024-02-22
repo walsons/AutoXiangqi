@@ -295,33 +295,6 @@ int main()
 
 	std::string fen;
 	std::string chesser;
-	while (true)
-	{
-		/*fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
-		chesser = "w";
-		Write("position fen " + fen + " " + chesser + " - - 0 1\n");
-		Write("go depth 10\n");
-		std::string bestMove;
-		while (true)
-		{
-			std::string output;
-			Read(engineOutput, BuffSize, readBytes);
-			engineOutput[readBytes] = '\0';
-			output += engineOutput;
-			auto pos = output.find("bestmove");
-			if (pos != std::string::npos && (pos + std::string("bestmove xxxx").size() <= output.size()))
-			{
-				bestMove = output.substr(pos + std::string("bestmove ").size(), std::string("xxxx").size());
-				break;
-			}
-		}
-		std::cout << "bestMove: " << bestMove << std::endl;*/
-
-		// -------------------------
-		break;
-	}
-
-	// Write("quit\n");
 	
 	POINT topLeft = { 0, 0 };
 	POINT bottomRight = { 0, 0 };
@@ -342,6 +315,16 @@ int main()
 	}
 	if (GetCursorPos(&bottomRight))
 		std::cout << "bottomRight point: " << bottomRight.x << ", " << bottomRight.y << std::endl;
+
+	POINT bashPos;
+	std::cout << "Please put the mouse in the bash, input bash to go" << std::endl;
+	while (std::cin >> pointCmd)
+	{
+		if (pointCmd == "bash")
+			break;
+	}
+	if (GetCursorPos(&bashPos))
+		std::cout << "bashPos point: " << bashPos.x << ", " << bashPos.y << std::endl;
 
 	// Screen shot
 	HDC hScreenDC = GetDC(NULL);
@@ -374,12 +357,9 @@ int main()
 	std::unordered_map<std::string, cv::Mat> pieceID;
 	MakePieceFingerPrint(pieceID);
 
-	std::cout << "Input \"go\" to start game" << std::endl;
-	while (std::cin >> pointCmd)
-	{
-		if (pointCmd == "go")
-			break;
-	}
+	std::cout << "Setting is ready" << std::endl;
+	std::cout << "Input ngr (new game as red) or ngb (new game as black)" << std::endl;
+	std::cout << "Input n (next) to get best move" << std::endl;
 
 	while (std::cin >> pointCmd)
 	{
@@ -460,6 +440,29 @@ int main()
 			}
 			else
 				std::cout << "red bestMove: " << bestMove << std::endl;
+
+			extern XiangqiPoint g_board[10][9];
+			/*for (int i = 0; i < 10; ++i)
+			{
+				for (int j = 0; j < 9; ++j)
+				{
+					std::cout << g_board[i][j].x / dpi + topLeft.x << ", " << g_board[i][j].y / dpi + topLeft.y << std::endl;
+				}
+			}*/
+			ChessTools ct;
+			int col1 = bestMove[0] - 'a';
+			int row1 = '9' - bestMove[1];
+			int col2 = bestMove[2] - 'a';
+			int row2 = '9' - bestMove[3];
+			POINT from{ g_board[row1][col1].x / dpi + topLeft.x, g_board[row1][col1].y / dpi + topLeft.y };
+			POINT to{ g_board[row1][col2].x / dpi + topLeft.x, g_board[row2][col2].y / dpi + topLeft.y };
+			std::cout << from.x << ", " << from.y << "    " << to.x << ", " << to.y << std::endl;
+			ct.MoveXiangqiPiece(from, to);
+			Sleep(500);
+			if (!SetCursorPos(bashPos.x, bashPos.y))
+				return false;
+			mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+
 		}
 	}
 	
