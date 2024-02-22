@@ -133,11 +133,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChessEngine.cpp" />
+    <ClCompile Include="IPC.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="scan.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AutoChesser.hpp" />
+    <ClInclude Include="AXQDefine.h" />
+    <ClInclude Include="ChessEngine.h" />
+    <ClInclude Include="IPC.h" />
     <ClInclude Include="scan.h" />
+    <ClInclude Include="Tools.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

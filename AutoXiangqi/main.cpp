@@ -6,12 +6,12 @@
 
 #include "scan.h"
 
-static constexpr int BuffSize = 4096;
-
-HANDLE ParentWriteNode = nullptr;
-HANDLE ParentReadNode = nullptr;
-HANDLE ChildReadNode = nullptr;
-HANDLE ChildWriteNode = nullptr;
+/*********************/
+#include "IPC.h"
+#include "ChessEngine.h"
+#include "AutoChesser.hpp"
+#include "ChessEngine.h"
+/*********************/
 
 int ErrorExit(const std::string& errorInfo)
 {
@@ -23,172 +23,6 @@ template <typename... Handles>
 void CloseHandles(Handles... handles)
 {
 	(void(), ..., CloseHandle(handles));
-}
-
-int CreateEngineProcess(const std::wstring &engineName, PROCESS_INFORMATION& pi, STARTUPINFO& si)
-{
-	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-	ZeroMemory(&si, sizeof(STARTUPINFO));
-	si.cb = sizeof(STARTUPINFO);
-	si.hStdError = ChildWriteNode;
-	si.hStdOutput = ChildWriteNode;
-	si.hStdInput = ChildReadNode;
-	si.dwFlags |= STARTF_USESTDHANDLES;
-
-	LPWSTR cmd = (LPWSTR)engineName.c_str();
-	auto ret = CreateProcess(NULL,
-		cmd,     // command line 
-		NULL,    // process security attributes 
-		NULL,    // primary thread security attributes 
-		TRUE,    // handles are inherited 
-		0,       // creation flags 
-		NULL,    // use parent's environment 
-		NULL,    // use parent's current directory 
-		&si,     // STARTUPINFO pointer 
-		&pi);    // receives PROCESS_INFORMATION
-	if (!ret)
-		return ErrorExit("CreateProcess");
-	return 0;
-}
-
-int Read(char buff[], DWORD size, DWORD& readBytes)
-{
-	auto ret = ReadFile(ParentReadNode, buff, size, &readBytes, NULL);
-	return ret ? 0 : 1;
-}
-
-int Write(const std::string& cmd)
-{
-	DWORD writeBytes;
-	auto ret = WriteFile(ParentWriteNode, cmd.c_str(), cmd.size(), &writeBytes, NULL);
-	return ret ? 0 : 1;
-}
-
-int InitEngine()
-{
-	char engineOutput[BuffSize + 1];
-	DWORD readBytes = 0;
-
-	Read(engineOutput, BuffSize, readBytes);
-	engineOutput[readBytes] = '\0';
-	std::cout << "Engine Info: " << engineOutput << std::endl;
-
-	Write("uci\n");
-
-	Read(engineOutput, BuffSize, readBytes);
-	engineOutput[readBytes] = '\0';
-	std::cout << "Engine Info: " << engineOutput << std::endl;
-
-	Write("setoption name Threads value 4\n");
-	Write("setoption name EvalFile value C:/Users/shayne/source/repos/AutoXiangqi/x64/Debug/pikafish.nnue\n");
-	return 0;
-}
-
-//LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-//{
-//	switch (uMsg)
-//	{
-//	case WM_CREATE:  // 多用于窗口的初始化
-//		// 设置窗口扩展样式为WS_EX_LAYERED
-//		SetWindowLong(hwnd, GWL_EXSTYLE, GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-//		// 设置窗口透明度为50%（0-255，255为完全不透明）
-//		SetLayeredWindowAttributes(hwnd, 0, 1, LWA_ALPHA);
-//		break;
-//	case WM_LBUTTONDOWN:
-//		MessageBox(NULL, L"Hello World!", L"Hello Message", MB_OK | MB_ICONINFORMATION);
-//
-//		std::cout << "down=============" << std::endl;
-//		break;
-//	case WM_DESTROY:
-//		PostQuitMessage(0);
-//		return 0;
-//
-//	case WM_PAINT:
-//	{
-//		PAINTSTRUCT ps;
-//		HDC hdc = BeginPaint(hwnd, &ps);
-//
-//		// All painting occurs here, between BeginPaint and EndPaint.
-//
-//		FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-//
-//		EndPaint(hwnd, &ps);
-//	}
-//	return 0;
-//
-//	}
-//	return DefWindowProc(hwnd, uMsg, wParam, lParam);
-//}
-
-
-
-#define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1:0) 
-
-HWND GetWindowHandleByPID(DWORD dwProcessID)
-{
-	HWND h = GetTopWindow(0);
-	while (h)
-	{
-		DWORD pid = 0;
-		DWORD dwTheardId = GetWindowThreadProcessId(h, &pid);
-		if (dwTheardId != 0)
-		{
-			if (pid == dwProcessID/*your process id*/)
-			{
-				// here h is the handle to the window  
-				if (GetTopWindow(h))
-				{
-					return h;
-				}
-				// return h;   
-			}
-		}
-		h = ::GetNextWindow(h, GW_HWNDNEXT);
-	}
-	return NULL;
-}
-
-void uf(DWORD pid)
-{
-	HWND hwndNow = GetWindowHandleByPID(pid);
-	while (1)
-	{
-		POINT pNow = { 0, 0 };
-		if (GetCursorPos(&pNow))  // 获取鼠标当前位置
-		{
-			std::cout << pNow.x << " " << pNow.y << "&&&&&&&&&&" << std::endl;
-			HWND hwndPointNow = NULL;
-			DWORD  dwProcessID = 0;
-			RECT rect;
-			hwndPointNow = WindowFromPoint(pNow);  // 获取鼠标所在窗口的句柄
-			::GetWindowThreadProcessId(hwndPointNow, &dwProcessID);
-			std::cout << dwProcessID << std::endl;
-			if (pid == dwProcessID)
-			{
-				GetWindowRect(hwndPointNow, &rect);
-				std::cout << "窗口的句柄:" << (int)hwndNow << std::endl;  // 鼠标所在窗口的句柄
-				std::cout << "鼠标所在窗口的句柄:" << (int)hwndPointNow << "ID:" << dwProcessID << std::endl;  // 鼠标所在窗口的句柄
-				std::cout << "鼠标所在窗口的top:" << rect.top << std::endl;  // 鼠标所在窗口的句柄
-				std::cout << "鼠标所在窗口的bottom:" << rect.bottom << std::endl;  // 鼠标所在窗口的句柄
-				std::cout << "鼠标所在窗口的left:" << rect.left << std::endl;  // 鼠标所在窗口的句柄
-				std::cout << "鼠标所在窗口的right:" << rect.right << std::endl;  // 鼠标所在窗口的句柄
-				std::cout << "鼠标所在窗口的宽:" << rect.right - rect.left << std::endl;  // 鼠标所在窗口的句柄
-				std::cout << "鼠标所在窗口的高:" << rect.bottom - rect.top << std::endl;  // 鼠标所在窗口的句柄
-
-				short state = 0;
-				if (((state = GetAsyncKeyState(MOUSE_MOVED)) & 0x8000) || (state & 0x01)) {
-					system("color 97");
-				}
-				if (((state = GetAsyncKeyState(MOUSE_EVENT)) & 0x8000) || (state & 0x01)) {
-					system("color A7");
-				}
-				if (((state = GetAsyncKeyState(MOUSE_WHEELED)) & 0x8000) || (state & 0x01)) {
-					system("color 17");
-				}
-			}
-			Sleep(1000);
-		}
-	}
 }
 
 double GetScale()
@@ -250,48 +84,33 @@ std::string sc(const POINT& topLeft, const POINT& bottomRight, std::unordered_ma
 	return Board2Fen(img, pieceID);
 }
 
-//int WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
+
+
+
+
 int main()
 {
-	SECURITY_ATTRIBUTES sa;
-	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-	// Set the bInheritHandle flag so pipe handles are inherited.
-	sa.bInheritHandle = TRUE;
-	sa.lpSecurityDescriptor = NULL;
+	axq::IPC ipc;
+	auto ret = ipc.InitIPC();
+	if (ret != axq::AXQResult::ok)
+		return ErrorExit("ipc.InitIPC()");
 
-	if (!CreatePipe(&ParentReadNode, &ChildWriteNode, &sa, 0))
-		return ErrorExit("CreatePipe");
-	// Ensure the read handle to the pipe for STDOUT is not inherited.
-	if (!SetHandleInformation(ParentReadNode, HANDLE_FLAG_INHERIT, 0))
-		return ErrorExit("SetHandleInformation");
-	if (!CreatePipe(&ChildReadNode, &ParentWriteNode, &sa, 0))
-		return ErrorExit("CreatePipe");
-	// Ensure the write handle to the pipe for STDIN is not inherited.
-	if (!SetHandleInformation(ParentWriteNode, HANDLE_FLAG_INHERIT, 0))
-		return ErrorExit("SetHandleInformation");
+	axq::Pikafish engine("pikafish", "pikafish_x86-64-vnni256.exe");
+	engine.InitEngine(ipc.ChildReadNode, ipc.ChildWriteNode);
+	ret = engine.Run();
+	if (ret != axq::AXQResult::ok)
+		return ErrorExit("engine.run()");
 
-	// Start the engine process
-	PROCESS_INFORMATION pi;
-	STARTUPINFO si;
-	if (CreateEngineProcess(L"pikafish_x86-64-vnni256.exe", pi, si))
-		return ErrorExit("CreateEngineProcess");
+	axq::AutoChesser autoChesser;
+	ret = autoChesser.ConfigureEngine<axq::Pikafish>(engine, ipc);
+	if (ret != axq::AXQResult::ok)
+		return ErrorExit("autoChesser.ConfigureEngine<axq::Pikafish>(engine, ipc)");
 
-	// Do wirte and read using Read() and Write()
+
+	const int BuffSize = 4096;
 	char engineOutput[BuffSize + 1];
 	DWORD readBytes = 0;
 	DWORD writeBytes = 0;
-
-	if (InitEngine())
-		return ErrorExit("InitEngine");
-
-	// Game start
-	Write("ucinewgame\n");
-	Write("isready\n");
-	Read(engineOutput, BuffSize, readBytes);
-	engineOutput[readBytes] = '\0';
-	std::string isReady = engineOutput;
-	if (isReady.find("readyok") == std::string::npos)
-		return ErrorExit("isready: " + isReady);
 
 	std::string fen;
 	std::string chesser;
@@ -323,8 +142,11 @@ int main()
 		if (pointCmd == "bash")
 			break;
 	}
-	if (GetCursorPos(&bashPos))
-		std::cout << "bashPos point: " << bashPos.x << ", " << bashPos.y << std::endl;
+	/*if (GetCursorPos(&bashPos))
+		std::cout << "bashPos point: " << bashPos.x << ", " << bashPos.y << std::endl;*/
+	ChessTools ct1;
+	HWND chessWin;
+	ct1.GetWindowMouseAt(chessWin);
 
 	// Screen shot
 	HDC hScreenDC = GetDC(NULL);
@@ -366,12 +188,12 @@ int main()
 		if (pointCmd == "ngr")
 		{
 			chesser = "w";
-			Write("ucinewgame\n");
+			ipc.Write("ucinewgame");
 		}
 		if (pointCmd == "ngb")
 		{
 			chesser = "b";
-			Write("ucinewgame\n");
+			ipc.Write("ucinewgame");
 		}
 		else if (pointCmd == "n")  // next
 		{
@@ -381,14 +203,14 @@ int main()
 				std::reverse(fen.begin(), fen.end());
 			//fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
 			//chesser = "w";
-			Write("position fen " + fen + " " + chesser + " - - 0 1\n");
+			ipc.Write("position fen " + fen + " " + chesser + " - - 0 1");
 			std::cout << ("position fen " + fen + " " + chesser + " - - 0 1") << std::endl;
-			Write("go depth 10\n");
+			ipc.Write("go depth 10");
 			std::string bestMove;
 			while (true)
 			{
 				std::string output;
-				Read(engineOutput, BuffSize, readBytes);
+				ipc.Read(engineOutput, BuffSize, readBytes);
 				engineOutput[readBytes] = '\0';
 				output += engineOutput;
 				auto pos = output.find("bestmove");
@@ -457,17 +279,26 @@ int main()
 			POINT from{ g_board[row1][col1].x / dpi + topLeft.x, g_board[row1][col1].y / dpi + topLeft.y };
 			POINT to{ g_board[row1][col2].x / dpi + topLeft.x, g_board[row2][col2].y / dpi + topLeft.y };
 			std::cout << from.x << ", " << from.y << "    " << to.x << ", " << to.y << std::endl;
-			ct.MoveXiangqiPiece(from, to);
+			RECT rect;
+			GetWindowRect(chessWin, &rect);
+			// 87 564
+			SendMessage(chessWin, WM_LBUTTONDOWN, 0, from.x - rect.left + ((from.y - rect.top) << 16));
+			SendMessage(chessWin, WM_LBUTTONUP, 0, from.x - rect.left + ((from.y - rect.top) << 16));
+			std::cout << rect.left << ", " << rect.top << std::endl;
+			Sleep(500);
+			SendMessage(chessWin, WM_LBUTTONDOWN, 0, to.x - rect.left + ((to.y - rect.top) << 16));
+			SendMessage(chessWin, WM_LBUTTONUP, 0, to.x - rect.left + ((to.y - rect.top) << 16));
+			/*ct.MoveXiangqiPiece(from, to);
 			Sleep(500);
 			if (!SetCursorPos(bashPos.x, bashPos.y))
 				return false;
-			mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+			mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);*/
 
 		}
 	}
 	
 
-	CloseHandles(pi.hProcess, pi.hThread, ParentWriteNode, ParentReadNode, ChildReadNode, ChildWriteNode);
+	// CloseHandles(pi.hProcess, pi.hThread, ParentWriteNode, ParentReadNode, ChildReadNode, ChildWriteNode);
 	//system("pause");
 	return 0;
 }

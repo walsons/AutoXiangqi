@@ -21,9 +21,30 @@
     <ClCompile Include="scan.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="ChessEngine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="IPC.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scan.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AXQDefine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ChessEngine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="IPC.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="AutoChesser.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
