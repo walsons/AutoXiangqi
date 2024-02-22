@@ -27,6 +27,9 @@
     <ClCompile Include="IPC.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="AutoChesser.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="scan.h">
@@ -44,7 +47,7 @@
     <ClInclude Include="Tools.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="AutoChesser.hpp">
+    <ClInclude Include="AutoChesser.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

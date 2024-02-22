@@ -9,7 +9,7 @@
 /*********************/
 #include "IPC.h"
 #include "ChessEngine.h"
-#include "AutoChesser.hpp"
+#include "AutoChesser.h"
 #include "ChessEngine.h"
 /*********************/
 
@@ -105,8 +105,13 @@ int main()
 	ret = autoChesser.ConfigureEngine<axq::Pikafish>(engine, ipc);
 	if (ret != axq::AXQResult::ok)
 		return ErrorExit("autoChesser.ConfigureEngine<axq::Pikafish>(engine, ipc)");
+	ret = autoChesser.LocateChessBoard();
+	if (ret != axq::AXQResult::ok)
+		return ErrorExit("autoChesser.LocateChessBoard()");
+	autoChesser.Run1(false);
 
 
+	
 	const int BuffSize = 4096;
 	char engineOutput[BuffSize + 1];
 	DWORD readBytes = 0;
@@ -115,38 +120,12 @@ int main()
 	std::string fen;
 	std::string chesser;
 	
-	POINT topLeft = { 0, 0 };
-	POINT bottomRight = { 0, 0 };
-	std::string pointCmd;
-	std::cout << "Please put the mouse in the top left, input tl to go" << std::endl;
-	while (std::cin >> pointCmd)
-	{
-		if (pointCmd == "tl")
-			break;
-	}
-	if (GetCursorPos(&topLeft))
-		std::cout << "topLeft point: " << topLeft.x << ", " << topLeft.y << std::endl;
-	std::cout << "Please put the mouse in the bottom right, input br to go" << std::endl;
-	while (std::cin >> pointCmd)
-	{
-		if (pointCmd == "br")
-			break;
-	}
-	if (GetCursorPos(&bottomRight))
-		std::cout << "bottomRight point: " << bottomRight.x << ", " << bottomRight.y << std::endl;
+	
 
-	POINT bashPos;
-	std::cout << "Please put the mouse in the bash, input bash to go" << std::endl;
-	while (std::cin >> pointCmd)
-	{
-		if (pointCmd == "bash")
-			break;
-	}
-	/*if (GetCursorPos(&bashPos))
-		std::cout << "bashPos point: " << bashPos.x << ", " << bashPos.y << std::endl;*/
-	ChessTools ct1;
-	HWND chessWin;
-	ct1.GetWindowMouseAt(chessWin);
+
+	auto topLeft = autoChesser.topLeft;
+	auto bottomRight = autoChesser.bottomRight;
+	HWND chessWin = autoChesser.gameWindow;
 
 	// Screen shot
 	HDC hScreenDC = GetDC(NULL);
@@ -156,8 +135,8 @@ int main()
 	int height = GetDeviceCaps(hScreenDC, VERTRES) * dpi;
 	HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, width, height);
 	HGDIOBJ oldObject = SelectObject(hMemoryDC, hBitmap);
-	int shotWidth = (bottomRight.x - topLeft.x) * dpi;
-	int shotHeight = (bottomRight.y - topLeft.y) * dpi;
+	int shotWidth = (autoChesser.bottomRight.x - autoChesser.topLeft.x) * dpi;
+	int shotHeight = (autoChesser.bottomRight.y - autoChesser.topLeft.y) * dpi;
 	BitBlt(hMemoryDC, 0, 0, shotWidth, shotHeight, hScreenDC, dpi * topLeft.x, dpi * topLeft.y, SRCCOPY);
 	BITMAPINFOHEADER bi;
 	bi.biSize = sizeof(BITMAPINFOHEADER);
@@ -183,6 +162,7 @@ int main()
 	std::cout << "Input ngr (new game as red) or ngb (new game as black)" << std::endl;
 	std::cout << "Input n (next) to get best move" << std::endl;
 
+	std::string pointCmd;
 	while (std::cin >> pointCmd)
 	{
 		if (pointCmd == "ngr")
@@ -198,7 +178,7 @@ int main()
 		else if (pointCmd == "n")  // next
 		{
 			// Scan board to fen
-			std::string fen = sc(topLeft, bottomRight, pieceID);
+			std::string fen = sc(autoChesser.topLeft, autoChesser.bottomRight, pieceID);
 			if (chesser == "b")
 				std::reverse(fen.begin(), fen.end());
 			//fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
