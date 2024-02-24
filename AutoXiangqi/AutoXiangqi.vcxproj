@@ -135,16 +135,16 @@
   <ItemGroup>
     <ClCompile Include="AutoChesser.cpp" />
     <ClCompile Include="ChessEngine.cpp" />
+    <ClCompile Include="FenGenerator.cpp" />
     <ClCompile Include="IPC.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="scan.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoChesser.h" />
     <ClInclude Include="AXQDefine.h" />
     <ClInclude Include="ChessEngine.h" />
+    <ClInclude Include="FenGenerator.h" />
     <ClInclude Include="IPC.h" />
-    <ClInclude Include="scan.h" />
     <ClInclude Include="Tools.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

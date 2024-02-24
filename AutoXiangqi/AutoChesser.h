@@ -4,10 +4,18 @@
 #include "AXQDefine.h"
 #include "ChessEngine.h"
 #include "IPC.h"
+#include "FenGenerator.h"
 #include <iostream>
 
 namespace axq
 {
+	enum class RunType
+	{
+		MOVE_PIECE_BY_MESSAGE = 1,
+		MOVE_PIECE_BY_MOUSE,
+		MOVE_PIECE_LIKE_HUMAN
+	};
+
 	class AutoChesser
 	{
 	public:
@@ -16,15 +24,25 @@ namespace axq
 
 		AXQResult LocateChessBoard();
 
-		// Method 1, send message to window to move chess piece
-		AXQResult Run1(bool activeBash);
-		// Method 2, simulate mouse click to move chess piece
-		AXQResult Run2(bool activeBash);
+		AXQResult LocateWindow();
+
+		AXQResult Run(IPC& ipc, FenGenerator& fenGen, RunType runType);
+
+	private:
+		void MovePieceByMessage(POINT from, POINT to);
+		void MovePieceByMouse(POINT from, POINT to);
+		void MovePieceLikeHuman(POINT from, POINT to);
+		void ImitateHumanMove(POINT destination, int sleepTime = 10, long stepSize = 5);
 
 	public:
 		POINT topLeft = { 0, 0 };
 		POINT bottomRight = { 0, 0 };
 		HWND gameWindow = nullptr;
+		HWND bashWindow = nullptr;
+		bool activeBash = false;
+
+	private:
+		char engineOutput[BuffSize + 1];
 	};
 
 	template <>
@@ -46,7 +64,7 @@ namespace axq
 		std::cout << "Engine Info: " << engineOutput << std::endl;
 
 		ipc.Write("setoption name Threads value 4");
-		ipc.Write("setoption name EvalFile value C:/Users/shayne/source/repos/AutoXiangqi/x64/Debug/pikafish.nnue");
+		ipc.Write("setoption name EvalFile value pikafish.nnue");
 
 		// Game start
 		ipc.Write("ucinewgame");

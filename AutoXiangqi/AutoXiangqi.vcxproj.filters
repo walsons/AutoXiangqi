@@ -18,9 +18,6 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="scan.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="ChessEngine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -30,11 +27,11 @@
     <ClCompile Include="AutoChesser.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="FenGenerator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="scan.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="AXQDefine.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -48,6 +45,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="AutoChesser.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FenGenerator.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
