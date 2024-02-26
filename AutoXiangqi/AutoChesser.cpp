@@ -2,6 +2,53 @@
 
 namespace axq
 {
+	AutoChesser::AutoChesser(bool readSetting, std::string settingName)
+	{
+		if (readSetting)
+		{
+			settingMgr.open(settingName, std::ios::in);
+			if (settingMgr.is_open())
+			{
+				std::unordered_map<std::string, POINT> pointSettings;
+				std::unordered_map<std::string, int> valueSettings;
+				std::string line;
+				while (std::getline(settingMgr, line))
+				{
+					size_t pos = line.find("=");
+					std::string key = line.substr(0, pos);
+					std::string value = line.substr(pos + 1);
+					pos = value.find(",");
+					if (pos != std::string::npos)
+					{
+						int x = stoi(value.substr(0, pos));
+						int y = stoi(value.substr(pos + 1));
+						pointSettings.insert({ key, {x, y} });
+					}
+					else
+					{
+						valueSettings.insert({ key, stoi(value) });
+					}
+				}
+				topLeft = pointSettings["topLeft"];
+				bottomRight = pointSettings["bottomRight"];
+				gameWindow = WindowFromPoint(pointSettings["gameWindow"]);
+				bashWindow = WindowFromPoint(pointSettings["bashWindow"]);
+				windowRect.top = valueSettings["windowTop"];
+				windowRect.left = valueSettings["windowLeft"];
+				windowRect.bottom = valueSettings["windowBottom"];
+				windowRect.right = valueSettings["windowRight"];
+				/*bool sd = SetWindowPos(gameWindow, HWND_TOPMOST, windowRect.left, windowRect.top,
+					windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, SWP_SHOWWINDOW);*/
+			}
+		}
+		else
+		{
+			settingMgr.open(settingName, std::ios::out);
+		}
+		if (!settingMgr.is_open())
+			std::cout << "cannot open setting file" << std::endl;
+	}
+
 	AXQResult AutoChesser::LocateChessBoard()
 	{
 		std::string cmd;
@@ -25,6 +72,12 @@ namespace axq
 		if (!GetCursorPos(&bottomRight))
 			return AXQResult::fail;
 		std::cout << "bottomRight point: " << bottomRight.x << ", " << bottomRight.y << std::endl;
+
+		// write setting to file
+		std::string line = "topLeft=" + std::to_string(topLeft.x) + "," + std::to_string(topLeft.y);
+		settingMgr << line << std::endl;
+		line = "bottomRight=" + std::to_string(bottomRight.x) + "," + std::to_string(bottomRight.y);
+		settingMgr << line << std::endl;
 		
 		return AXQResult::ok;
 	}
@@ -43,6 +96,17 @@ namespace axq
 		if (!GetCursorPos(&curPoint))
 			return AXQResult::fail;
 		gameWindow = WindowFromPoint(curPoint);
+		std::string line = "gameWindow=" + std::to_string(curPoint.x) + "," + std::to_string(curPoint.y);
+		settingMgr << line << std::endl;
+
+		RECT windowRect;
+		GetWindowRect(gameWindow, &windowRect);
+		
+		settingMgr << "windowTop=" + std::to_string(windowRect.top) << std::endl
+			<< "windowLeft=" + std::to_string(windowRect.left) << std::endl
+			<< "windowBottom=" + std::to_string(windowRect.bottom) << std::endl
+			<< "windowRight=" + std::to_string(windowRect.right) << std::endl;
+
 		// Bash
 		std::cout << "Please put the mouse in the this bash, input \"bash\" for sure" << std::endl;
 		while (std::cin >> cmd)
@@ -53,6 +117,9 @@ namespace axq
 		if (!GetCursorPos(&curPoint))
 			return AXQResult::fail;
 		bashWindow = WindowFromPoint(curPoint);
+		line = "bashWindow=" + std::to_string(curPoint.x) + "," + std::to_string(curPoint.y);
+		settingMgr << line << std::endl;
+
 		return AXQResult::ok;
 	}
 
@@ -188,7 +255,7 @@ namespace axq
 				if (activeBash)
 				{
 					// give some time for mouse event to change active window
-					Sleep(200);
+					Sleep(500);
 					RECT rect;
 					GetWindowRect(bashWindow, &rect);
 					POINT originPos;

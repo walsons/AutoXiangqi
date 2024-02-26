@@ -6,6 +6,7 @@
 #include "IPC.h"
 #include "FenGenerator.h"
 #include <iostream>
+#include <fstream>
 
 namespace axq
 {
@@ -19,6 +20,8 @@ namespace axq
 	class AutoChesser
 	{
 	public:
+		AutoChesser(bool readSetting = false, std::string settingName = "setting.txt");
+
 		template <typename Engine>
 		AXQResult ConfigureEngine(Engine& engine, IPC& ipc);
 
@@ -40,9 +43,11 @@ namespace axq
 		HWND gameWindow = nullptr;
 		HWND bashWindow = nullptr;
 		bool activeBash = false;
+		RECT windowRect = { 0, 0, 0, 0 };
 
 	private:
 		char engineOutput[BuffSize + 1];
+		std::fstream settingMgr;
 	};
 
 	template <>
