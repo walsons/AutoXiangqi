@@ -1,0 +1,3 @@
+m_ScreenShotTopLeft=3,204
+m_ScreenShotBottomRight=463,698
+gameWindowPoint=327,619

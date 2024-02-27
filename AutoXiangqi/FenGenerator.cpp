@@ -1,8 +1,67 @@
 #include "FenGenerator.h"
 #include <Windows.h>
+#include <wingdi.h>
 
 namespace axq
 {
+    static COLORREF redColor = RGB(255, 0, 0);
+    static COLORREF blueColor = RGB(0, 0, 255);
+    static COLORREF greenColor = RGB(0, 255, 0);
+
+    long calY(long x, double k, double b)
+    {
+        return static_cast<long>(k * x + b);
+    }
+    long calX(long y, double k, double b)
+    {
+        return static_cast<long>((y - b) / k);
+    }
+    void drawLine(HDC hdc, POINT p1, POINT p2)
+    {
+        if (p1.x == p2.x)
+        {
+            long beg = p1.y, end = p2.y;
+            if (beg > end)
+                std::swap(beg, end);
+            for (long i = beg; i <= end; ++i)
+            {
+                SetPixel(hdc, p1.x, i, blueColor);
+            }
+        }
+        double k = (static_cast<double>(p1.y) - p2.y) / (static_cast<double>(p1.x) - p2.x);
+        double b = p1.y - k * p1.x;
+        auto draw = [&](long beg, long end, long (*f)(long, double, double)) {
+            if (beg > end)
+                std::swap(beg, end);
+            for (long i = beg; i <= end; ++i)
+            {
+                if (f == &calY)
+                    SetPixel(hdc, i, f(i, k, b), blueColor);
+                else
+                    SetPixel(hdc, f(i, k, b), i, blueColor);
+            }
+        };
+        if (std::abs(p1.x - p2.x) > std::abs(p1.y - p2.y))
+            draw(p1.x, p2.x, &calY);
+        else
+            draw(p1.y, p2.y, &calX);
+    }
+
+    std::atomic<bool> drawThreadRunning = true;
+
+    void drawBoard(POINT tl, POINT tr, POINT br, POINT bl)
+    {
+        HDC hScreenDC = GetDC(NULL);
+        while (drawThreadRunning)
+        {
+            drawLine(hScreenDC, tl, tr);
+            drawLine(hScreenDC, tr, br);
+            drawLine(hScreenDC, br, bl);
+            drawLine(hScreenDC, bl, tl);
+        }
+        ReleaseDC(NULL, hScreenDC);
+    }
+
     FenGenerator::FenGenerator(POINT topLeft, POINT bottomRight)
         : photoTopLeft(topLeft), photoBottomRight(bottomRight)
     {
@@ -79,6 +138,16 @@ namespace axq
         auto& b = boardCoordinate;
         auto& r = pieceRadius;
         cv::Rect rect(0, 0, 0, 0);
+
+        /*std::cout << (boardCoordinate[0][0].x + photoTopLeft.x * 2) << ", " << (boardCoordinate[0][0].y + photoTopLeft.y * 2) << std::endl;
+        std::cout << (boardCoordinate[0][8].x + photoTopLeft.x * 2) << ", " << (boardCoordinate[0][8].y + photoTopLeft.y * 2) << std::endl;
+        std::cout << (boardCoordinate[9][8].x + photoTopLeft.x * 2) << ", " << (boardCoordinate[9][8].y + photoTopLeft.y * 2) << std::endl;
+        std::cout << (boardCoordinate[9][0].x + photoTopLeft.x * 2) << ", " << (boardCoordinate[9][0].y + photoTopLeft.y * 2) << std::endl;
+        drawBoard(
+            { boardCoordinate[0][0].x + photoTopLeft.x * 2, boardCoordinate[0][0].y + photoTopLeft.y * 2 },
+            { boardCoordinate[0][8].x + photoTopLeft.x * 2, boardCoordinate[0][8].y + photoTopLeft.y * 2 },
+            { boardCoordinate[9][8].x + photoTopLeft.x * 2, boardCoordinate[9][8].y + photoTopLeft.y * 2 },
+            { boardCoordinate[9][0].x + photoTopLeft.x * 2, boardCoordinate[9][0].y + photoTopLeft.y * 2 });*/
 
         /***** Finger print for red *****/
         // r: ³µ [9][0]

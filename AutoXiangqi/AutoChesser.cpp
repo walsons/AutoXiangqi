@@ -2,55 +2,96 @@
 
 namespace axq
 {
-	AutoChesser::AutoChesser(bool readSetting, std::string settingName)
+	AutoChesser::AutoChesser(IPC& ipc, const std::string& settingFileName)
+		: m_IPC(ipc), m_SettingFileName(settingFileName)
 	{
-		if (readSetting)
+	}
+
+	AXQResult AutoChesser::ConfigureSetting()
+	{
+		std::cout << "Read previous setting? input y or n" << std::endl;
+		std::string cmd;
+		std::cin >> cmd;
+		if (cmd == "y")
+			m_ReadSetting = true;
+		if (m_ReadSetting)
+			m_RW.open(m_SettingFileName, std::ios::in);
+		else
+			m_RW.open(m_SettingFileName, std::ios::out);
+		if (!m_RW.is_open())
+			std::cout << "cannot open setting file" << std::endl;
+		if (m_ReadSetting)
 		{
-			settingMgr.open(settingName, std::ios::in);
-			if (settingMgr.is_open())
+			std::string line;
+			while (std::getline(m_RW, line))
 			{
-				std::unordered_map<std::string, POINT> pointSettings;
-				std::unordered_map<std::string, int> valueSettings;
-				std::string line;
-				while (std::getline(settingMgr, line))
-				{
-					size_t pos = line.find("=");
-					std::string key = line.substr(0, pos);
-					std::string value = line.substr(pos + 1);
-					pos = value.find(",");
-					if (pos != std::string::npos)
-					{
-						int x = stoi(value.substr(0, pos));
-						int y = stoi(value.substr(pos + 1));
-						pointSettings.insert({ key, {x, y} });
-					}
-					else
-					{
-						valueSettings.insert({ key, stoi(value) });
-					}
-				}
-				topLeft = pointSettings["topLeft"];
-				bottomRight = pointSettings["bottomRight"];
-				gameWindow = WindowFromPoint(pointSettings["gameWindow"]);
-				bashWindow = WindowFromPoint(pointSettings["bashWindow"]);
-				windowRect.top = valueSettings["windowTop"];
-				windowRect.left = valueSettings["windowLeft"];
-				windowRect.bottom = valueSettings["windowBottom"];
-				windowRect.right = valueSettings["windowRight"];
-				/*bool sd = SetWindowPos(gameWindow, HWND_TOPMOST, windowRect.left, windowRect.top,
-					windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, SWP_SHOWWINDOW);*/
+				size_t pos = line.find("=");
+				std::string key = line.substr(0, pos);
+				std::string value = line.substr(pos + 1);
+				m_Settings.insert({ key, value });
 			}
 		}
+		// step 1: set window position to (0, 0)
+		SetGameWindowPos();
+		// step 2 
+		LocateChessBoard();
+		m_FenGen.photoTopLeft = m_ScreenShotTopLeft;
+		m_FenGen.photoBottomRight = m_ScreenShotBottomRight;
+		cv::Mat boardScreenShot;
+		if (m_ReadSetting)
+			boardScreenShot = cv::imread("setting.png", cv::IMREAD_GRAYSCALE);
 		else
 		{
-			settingMgr.open(settingName, std::ios::out);
+			m_FenGen.BoardScreenShot(boardScreenShot);
+			cv::imwrite("setting.png", boardScreenShot);
 		}
-		if (!settingMgr.is_open())
-			std::cout << "cannot open setting file" << std::endl;
+		m_FenGen.MakePieceFingerPrint(boardScreenShot);
+		// step 3
+		LocateWindow();
+		
+		return AXQResult::ok;
+	}
+
+	AXQResult AutoChesser::SetGameWindowPos()
+	{
+		std::string cmd;
+		std::cout << "Please put the mouse in the game window title bar, input \"pos\" for sure" << std::endl;
+		while (std::cin >> cmd)
+		{
+			if (cmd == "pos")
+				break;
+		}
+		POINT curPoint;
+		if (!GetCursorPos(&curPoint))
+			return AXQResult::fail;
+		HWND window = WindowFromPoint(curPoint);
+		if (!SetWindowPos(window, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE))
+			return AXQResult::fail;
+		return AXQResult::ok;
 	}
 
 	AXQResult AutoChesser::LocateChessBoard()
 	{
+		if (m_ReadSetting)
+		{
+			std::string value = m_Settings["m_ScreenShotTopLeft"];
+			auto pos = value.find(",");
+			if (pos != std::string::npos)
+			{
+				int x = std::stoi(value.substr(0, pos));
+				int y = std::stoi(value.substr(pos + 1));
+				m_ScreenShotTopLeft = { x, y };
+			}
+			value = m_Settings["m_ScreenShotBottomRight"];
+			pos = value.find(",");
+			if (pos != std::string::npos)
+			{
+				int x = std::stoi(value.substr(0, pos));
+				int y = std::stoi(value.substr(pos + 1));
+				m_ScreenShotBottomRight = { x, y };
+			}
+			return AXQResult::ok;
+		}
 		std::string cmd;
 		// Top left
 		std::cout << "Please put the mouse in the top left of chess board, input \"tl\" for sure" << std::endl;
@@ -59,9 +100,9 @@ namespace axq
 			if (cmd == "tl")
 				break;
 		}
-		if (!GetCursorPos(&topLeft))
+		if (!GetCursorPos(&m_ScreenShotTopLeft))
 			return AXQResult::fail;
-		std::cout << "topLeft point: " << topLeft.x << ", " << topLeft.y << std::endl;
+		std::cout << "Screen shot top left point: " << m_ScreenShotTopLeft.x << ", " << m_ScreenShotTopLeft.y << std::endl;
 		// Bottom right
 		std::cout << "Please put the mouse in the bottom right of chess board, input \"br\" for sure" << std::endl;
 		while (std::cin >> cmd)
@@ -69,44 +110,50 @@ namespace axq
 			if (cmd == "br")
 				break;
 		}
-		if (!GetCursorPos(&bottomRight))
+		if (!GetCursorPos(&m_ScreenShotBottomRight))
 			return AXQResult::fail;
-		std::cout << "bottomRight point: " << bottomRight.x << ", " << bottomRight.y << std::endl;
+		std::cout << "Screen shot bottom right point: " << m_ScreenShotBottomRight.x << ", " << m_ScreenShotBottomRight.y << std::endl;
 
 		// write setting to file
-		std::string line = "topLeft=" + std::to_string(topLeft.x) + "," + std::to_string(topLeft.y);
-		settingMgr << line << std::endl;
-		line = "bottomRight=" + std::to_string(bottomRight.x) + "," + std::to_string(bottomRight.y);
-		settingMgr << line << std::endl;
-		
+		std::string line = "m_ScreenShotTopLeft=" + std::to_string(m_ScreenShotTopLeft.x) + "," + std::to_string(m_ScreenShotTopLeft.y);
+		m_RW << line << std::endl;
+		line = "m_ScreenShotBottomRight=" + std::to_string(m_ScreenShotBottomRight.x) + "," + std::to_string(m_ScreenShotBottomRight.y);
+		m_RW << line << std::endl;
+
 		return AXQResult::ok;
 	}
 
 	AXQResult AutoChesser::LocateWindow()
 	{
 		std::string cmd;
-		// Window
-		std::cout << "Please put the mouse in the game window, input \"win\" for sure" << std::endl;
-		while (std::cin >> cmd)
-		{
-			if (cmd == "win")
-				break;
-		}
 		POINT curPoint;
-		if (!GetCursorPos(&curPoint))
-			return AXQResult::fail;
-		gameWindow = WindowFromPoint(curPoint);
-		std::string line = "gameWindow=" + std::to_string(curPoint.x) + "," + std::to_string(curPoint.y);
-		settingMgr << line << std::endl;
-
-		RECT windowRect;
-		GetWindowRect(gameWindow, &windowRect);
+		if (m_ReadSetting)
+		{
+			std::string value = m_Settings["gameWindowPoint"];
+			auto pos = value.find(",");
+			if (pos != std::string::npos)
+			{
+				int x = stoi(value.substr(0, pos));
+				int y = stoi(value.substr(pos + 1));
+				gameWindow = WindowFromPoint({ x, y });
+			}
+		}
+		else
+		{
+			// Window
+			std::cout << "Please put the mouse in the game window, input \"win\" for sure" << std::endl;
+			while (std::cin >> cmd)
+			{
+				if (cmd == "win")
+					break;
+			}
+			if (!GetCursorPos(&curPoint))
+				return AXQResult::fail;
+			gameWindow = WindowFromPoint(curPoint);
+			std::string line = "gameWindowPoint=" + std::to_string(curPoint.x) + "," + std::to_string(curPoint.y);
+			m_RW << line << std::endl;
+		}
 		
-		settingMgr << "windowTop=" + std::to_string(windowRect.top) << std::endl
-			<< "windowLeft=" + std::to_string(windowRect.left) << std::endl
-			<< "windowBottom=" + std::to_string(windowRect.bottom) << std::endl
-			<< "windowRight=" + std::to_string(windowRect.right) << std::endl;
-
 		// Bash
 		std::cout << "Please put the mouse in the this bash, input \"bash\" for sure" << std::endl;
 		while (std::cin >> cmd)
@@ -117,13 +164,11 @@ namespace axq
 		if (!GetCursorPos(&curPoint))
 			return AXQResult::fail;
 		bashWindow = WindowFromPoint(curPoint);
-		line = "bashWindow=" + std::to_string(curPoint.x) + "," + std::to_string(curPoint.y);
-		settingMgr << line << std::endl;
 
 		return AXQResult::ok;
 	}
 
-	AXQResult AutoChesser::Run(IPC& ipc, FenGenerator& fenGen, RunType runType)
+	AXQResult AutoChesser::Run(IPC& ipc, RunType runType)
 	{
 		std::string cmd;
 		// Run type
@@ -162,7 +207,7 @@ namespace axq
 			else if (cmd == "n" || cmd == "'")  // next
 			{
 				// Scan board to fen
-				std::string fen = fenGen.GenerateFen();
+				std::string fen = m_FenGen.GenerateFen();
 				if (color == "b")
 					std::reverse(fen.begin(), fen.end());
 				//fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
@@ -231,10 +276,10 @@ namespace axq
 				int row1 = '9' - bestMove[1];
 				int col2 = bestMove[2] - 'a';
 				int row2 = '9' - bestMove[3];
-				auto& bc = fenGen.boardCoordinate;
-				auto dpi = fenGen.GetWindowDpi();
-				POINT from{ bc[row1][col1].x / dpi + topLeft.x, bc[row1][col1].y / dpi + topLeft.y };
-				POINT to{ bc[row1][col2].x / dpi + topLeft.x, bc[row2][col2].y / dpi + topLeft.y };
+				auto& bc = m_FenGen.boardCoordinate;
+				auto dpi = m_FenGen.GetWindowDpi();
+				POINT from{ bc[row1][col1].x / dpi + m_ScreenShotTopLeft.x, bc[row1][col1].y / dpi + m_ScreenShotTopLeft.y };
+				POINT to{ bc[row1][col2].x / dpi + m_ScreenShotTopLeft.x, bc[row2][col2].y / dpi + m_ScreenShotTopLeft.y };
 
 				switch (runType)
 				{

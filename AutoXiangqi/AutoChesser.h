@@ -20,16 +20,20 @@ namespace axq
 	class AutoChesser
 	{
 	public:
-		AutoChesser(bool readSetting = false, std::string settingName = "setting.txt");
+		AutoChesser(IPC& ipc, const std::string& settingFileName = "setting.txt");
 
 		template <typename Engine>
 		AXQResult ConfigureEngine(Engine& engine, IPC& ipc);
+
+		AXQResult ConfigureSetting();
+
+		AXQResult SetGameWindowPos();
 
 		AXQResult LocateChessBoard();
 
 		AXQResult LocateWindow();
 
-		AXQResult Run(IPC& ipc, FenGenerator& fenGen, RunType runType);
+		AXQResult Run(IPC& ipc, RunType runType);
 
 	private:
 		void MovePieceByMessage(POINT from, POINT to);
@@ -38,8 +42,10 @@ namespace axq
 		void ImitateHumanMove(POINT destination, int sleepTime = 10, long stepSize = 5);
 
 	public:
-		POINT topLeft = { 0, 0 };
-		POINT bottomRight = { 0, 0 };
+		IPC& m_IPC;
+		FenGenerator m_FenGen;
+		POINT m_ScreenShotTopLeft = { 0, 0 };
+		POINT m_ScreenShotBottomRight = { 0, 0 };
 		HWND gameWindow = nullptr;
 		HWND bashWindow = nullptr;
 		bool activeBash = false;
@@ -47,7 +53,10 @@ namespace axq
 
 	private:
 		char engineOutput[BuffSize + 1];
-		std::fstream settingMgr;
+		std::fstream m_RW;
+		bool m_ReadSetting = false;
+		std::string m_SettingFileName;
+		std::unordered_map<std::string, std::string> m_Settings;
 	};
 
 	template <>

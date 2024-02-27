@@ -15,6 +15,7 @@ namespace axq
 	class FenGenerator
 	{
 	public:
+		FenGenerator() = default;
 		FenGenerator(POINT topLeft, POINT bottomRight);
 		double GetWindowDpi();
 		void BoardScreenShot(cv::Mat& boardScreenShot);

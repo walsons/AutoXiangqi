@@ -3,24 +3,24 @@
 #include <iostream>
 namespace axq
 {
-    ChessEngine::ChessEngine(std::string engineName, std::string installPath)
-        : m_EngineName(engineName), m_InstallPath(installPath)
+    ChessEngine::ChessEngine(std::string engineName, std::string installPath, IPC& ipc)
+        : m_EngineName(engineName), m_InstallPath(installPath), m_IPC(ipc)
     {
     }
 
-    Pikafish::Pikafish(std::string engineName, std::string installPath)
-        : ChessEngine(engineName, installPath)
+    Pikafish::Pikafish(std::string engineName, std::string installPath, IPC& ipc)
+        : ChessEngine(engineName, installPath, ipc)
     {
     }
 
-    void Pikafish::InitEngine(HANDLE ChildReadNode, HANDLE ChildWriteNode)
+    void Pikafish::InitEngine()
     {
         ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
         ZeroMemory(&si, sizeof(STARTUPINFO));
         si.cb = sizeof(STARTUPINFO);
-        si.hStdInput = ChildReadNode;
-        si.hStdError = ChildWriteNode;
-        si.hStdOutput = ChildWriteNode;
+        si.hStdInput = m_IPC.ChildReadNode;
+        si.hStdError = m_IPC.ChildWriteNode;
+        si.hStdOutput = m_IPC.ChildWriteNode;
         si.dwFlags |= STARTF_USESTDHANDLES;
     }
 
