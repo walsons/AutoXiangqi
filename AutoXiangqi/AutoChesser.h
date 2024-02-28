@@ -35,7 +35,8 @@ namespace axq
 		AXQResult LocateGameTimer();
 		AXQResult LocateWindow();
 
-		void CheckMyTurn(int interval, std::string color, RunType runType);
+		void CheckMyTurn(int interval, RunType runType);
+		void MovePiece(RunType runType);
 
 		void MovePieceByMessage(POINT from, POINT to);
 		void MovePieceByMouse(POINT from, POINT to);

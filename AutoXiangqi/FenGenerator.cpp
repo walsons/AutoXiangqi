@@ -240,6 +240,8 @@ namespace axq
         BoardScreenShot(img);
         clock_t beginTime = clock();
         std::string fen;
+        std::unordered_map<char, short> m;
+        int color = 0;
         for (int i = 0; i < 10; ++i)
         {
             for (int j = 0; j < 9; ++j)
@@ -258,7 +260,6 @@ namespace axq
                 {
                     minValue = outScore;
                     target = boardPointInfo[i][j].name;
-                    // targetImg = pieceID[boardPointInfo[i][j].name];
                 }
                 else
                 {
@@ -269,27 +270,22 @@ namespace axq
                         {
                             minValue = score;
                             target = it->first;
-                            // targetImg = it->second;
                         }
                     }
                 }
                 boardPointInfo[i][j].name = target;
                 boardPointInfo[i][j].score = minValue;
-                /*if (i == 0 && j == 6)
+                int selfColor = 0;
+                bool valid = IsValidCharInFen((target.size() == 1 ? target[0] : 'e'), i, j, m, selfColor);
+                if (!valid)
+                    return "";
+                if (selfColor != 0)
                 {
-                    imshow("dd", onePiece);
-                    waitKey();
-                    imshow("dd3", targetImg);
-                    waitKey();
+                    if (color == -selfColor)
+                        return "";
+                    color = selfColor;
                 }
-                if (i == 0 && j == 7)
-                {
-                    imshow("dd", onePiece);
-                    waitKey();
-                    imshow("dd3", targetImg);
-                    waitKey();
-                }*/
-                //std::cout << "minValue: " << minValue << " -----------  " << "target: " << target << std::endl;
+
                 if (target.size() == 1)
                     fen += target;
                 else
@@ -305,6 +301,11 @@ namespace axq
         fen.pop_back();
         clock_t endTime = clock();
         std::cout << "time cost: " << (endTime - beginTime) << std::endl;
+        std::cout << "I'm " << color << " (red is 1, black is -1)" << std::endl;
+        if (color == -1)
+            std::reverse(fen.begin(), fen.end());
+        // "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
+        fen += (std::string(" ") + (color == 1 ? "w" : "b") + " - - 0 1");
         return fen;
     }
 
@@ -407,5 +408,131 @@ namespace axq
             }
         }
         return minScore;
+    }
+
+    bool FenGenerator::IsValidCharInFen(char key, int x, int y, std::unordered_map<char, short>& m, int& selfColor)
+    {
+        selfColor = 0;
+        ++m[key];
+        switch (key)
+        {
+        case 'r':
+        case 'n':
+        case 'c':
+        case 'R':
+        case 'N':
+        case 'C':
+        {
+            if (m[key] < 0 || m[key] > 2)
+                return false;
+            return true;
+        }
+        break;
+        case 'b':
+        case 'B':
+        {
+            if (m[key] < 0 || m[key] > 2)
+                return false;
+            // position: (0,2) (0,6) (2,0) (2,4) (2,8) (4,2) (4,6) --> top
+            constexpr const int corb[7][2] = { {0,2}, {0,6}, {2,0}, {2,4}, {2,8}, {4,2}, {4,6} };
+            // position: (9,2) (9,6) (7,0) (7,4) (7,8) (5,2) (5,6) --> bottom
+            constexpr const int corB[7][2] = { {9,2}, {9,6}, {7,0}, {7,4}, {7,8}, {5,2}, {5,6} };
+            for (size_t i = 0; i < sizeof(corb) / sizeof(corb[0]); ++i)
+            {
+                if (x == corb[i][0] && y == corb[i][1])
+                {
+                    selfColor = (key == 'b' ? 1 : -1);
+                    return true;
+                }
+            }
+            for (size_t i = 0; i < sizeof(corB) / sizeof(corB[0]); ++i)
+            {
+                if (x == corB[i][0] && y == corB[i][1])
+                {
+                    selfColor = (key == 'B' ? 1 : -1);
+                    return true;
+                }
+            }
+            return false;
+        }
+        break;
+        case 'a':
+        case 'A':
+        {
+            if (m[key] < 0 || m[key] > 2)
+                return false;
+            // position: (0,3) (0,5) (1,4) (2,3) (2,5) --> top
+            constexpr const int cora[5][2] = { {0,3}, {0,5}, {1,4}, {2,3}, {2,5} };
+            // position: (9,3) (9,5) (8,4) (7,3) (7,5) --> bottom
+            constexpr const int corA[5][2] = { {9,3}, {9,5}, {8,4}, {7,3}, {7,5} };
+            for (size_t i = 0; i < sizeof(cora) / sizeof(cora[0]); ++i)
+            {
+                if (x == cora[i][0] && y == cora[i][1])
+                {
+                    selfColor = (key == 'a' ? 1 : -1);
+                    return true;
+                }
+            }
+            for (size_t i = 0; i < sizeof(corA) / sizeof(corA[0]); ++i)
+            {
+                if (x == corA[i][0] && y == corA[i][1])
+                {
+                    selfColor = (key == 'A' ? 1 : -1);
+                    return true;
+                }
+            }
+            return false;
+        }
+        break;
+        case 'k':
+        case 'K':
+        {
+            if (m[key] != 1)
+                return false;
+            // position 0 <= x <= 2, 3 <= y <= 5 --> top
+            // position 7 <= x <= 9, 3 <= y <= 5 --> bottom
+            if (y >= 3 && y <= 5)
+            {
+                if (x >= 0 && x <= 2)
+                {
+                    selfColor = (key == 'k' ? 1 : -1);
+                    return true;
+                }
+                else if (x >= 7 && x <= 9)
+                {
+                    selfColor = (key == 'K' ? 1 : -1);
+                    return true;
+                }
+            }
+            return false;
+        }
+        break;
+        case 'p':
+        case 'P':
+        {
+            if (m[key] < 0 || m[key] > 5)
+                return false;
+            // x >= 3 --> top
+            // x <= 6 --> bottom
+            if (x > 6)
+            {
+                selfColor = (key == 'p' ? 1 : -1);
+            }
+            else if (x < 3)
+            {
+                selfColor = (key == 'P' ? 1 : -1);
+            }
+            return true;
+        }
+        break;
+        case 'e': // empty/blank
+        {
+            return true;
+        }
+        break;
+        default:
+            break;
+        }
+        return false;
     }
 }

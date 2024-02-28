@@ -27,6 +27,8 @@ namespace axq
 		cv::Mat SnippingGray(HWND win, POINT tl, POINT br);
 		void SetBoardCoordinate(cv::Mat boardScreenShot);
 		int SimilarityScore(cv::Mat img1, cv::Mat img2);
+		// selfColor: red is 1, black is -1, unknown is 0
+		bool IsValidCharInFen(char key, int x, int y, std::unordered_map<char, short>& m, int& selfColor);
 
 	public:
 		POINT m_ScreenShotTopLeft = { 0, 0 };

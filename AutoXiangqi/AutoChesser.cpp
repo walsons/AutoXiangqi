@@ -234,120 +234,96 @@ namespace axq
 		return AXQResult::ok;
 	}
 
-	void AutoChesser::CheckMyTurn(int interval, std::string color, RunType runType)
+	void AutoChesser::CheckMyTurn(int interval, RunType runType)
 	{
-		IPC& ipc = m_IPC;
 		while (m_KeepCheck)
 		{
 			m_MyTurn = m_FenGen.IsMyTurn();
-			std::cout << "m_MyTurn" << m_MyTurn << std::endl;
 			if (m_MyTurn)
 			{
-				// Scan board to fen
-				std::string fen = m_FenGen.GenerateFen();
-				if (color == "b")
-					std::reverse(fen.begin(), fen.end());
-				//fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
-				ipc.Write("position fen " + fen + " " + color + " - - 0 1");
-				std::cout << ("position fen " + fen + " " + color + " - - 0 1") << std::endl;
-				ipc.Write("go depth 15");
-				std::string bestMove;
-				std::string output;
-				while (true)
-				{
-					DWORD readBytes = 0;
-					ipc.Read(engineOutput, BuffSize, readBytes);
-					engineOutput[readBytes] = '\0';
-					output += engineOutput;
-					auto pos = output.find("bestmove");
-					if (pos != std::string::npos && (pos + std::string("bestmove xxxx").size() <= output.size()))
-					{
-						bestMove = output.substr(pos + std::string("bestmove ").size(), std::string("xxxx").size());
-						break;
-					}
-				}
-				if (color == "b")
-				{
-					for (auto& c : bestMove)
-					{
-						switch (c)
-						{
-						case 'a':
-							c = 'i';
-							break;
-						case 'b':
-							c = 'h';
-							break;
-						case 'c':
-							c = 'g';
-							break;
-						case 'd':
-							c = 'f';
-							break;
-						case 'e':
-							c = 'e';
-							break;
-						case 'f':
-							c = 'd';
-							break;
-						case 'g':
-							c = 'c';
-							break;
-						case 'h':
-							c = 'b';
-							break;
-						case 'i':
-							c = 'a';
-							break;
-						default:
-							c = (9 - (c - '0')) + '0';
-							break;
-						}
-					}
-					std::cout << "black bestMove: " << bestMove << std::endl;
-				}
-				else
-					std::cout << "red bestMove: " << bestMove << std::endl;
-
-				int col1 = bestMove[0] - 'a';
-				int row1 = '9' - bestMove[1];
-				int col2 = bestMove[2] - 'a';
-				int row2 = '9' - bestMove[3];
-				auto& bc = m_FenGen.boardCoordinate;
-				auto dpi = m_FenGen.GetWindowDpi();
-				POINT from{ bc[row1][col1].x / dpi + m_FenGen.m_ScreenShotTopLeft.x, bc[row1][col1].y / dpi + m_FenGen.m_ScreenShotTopLeft.y };
-				POINT to{ bc[row1][col2].x / dpi + m_FenGen.m_ScreenShotTopLeft.x, bc[row2][col2].y / dpi + m_FenGen.m_ScreenShotTopLeft.y };
-
-				switch (runType)
-				{
-				case RunType::MOVE_PIECE_BY_MESSAGE:
-					MovePieceByMessage(from, to);
-					break;
-				case RunType::MOVE_PIECE_BY_MOUSE:
-					MovePieceByMouse(from, to);
-					break;
-				case RunType::MOVE_PIECE_LIKE_HUMAN:
-					MovePieceLikeHuman(from, to);
-					break;
-				default:
-					MovePieceByMessage(from, to);
-					break;
-				}
-
-				if (activeBash)
-				{
-					// give some time for mouse event to change active window
-					Sleep(500);
-					RECT rect;
-					GetWindowRect(bashWindow, &rect);
-					POINT originPos;
-					GetCursorPos(&originPos);
-					SetCursorPos(rect.left + 20, rect.bottom - 20);
-					mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-					SetCursorPos(originPos.x, originPos.y);
-				}
+				MovePiece(runType);
 			}
 			Sleep(interval);
+		}
+	}
+
+	void AutoChesser::MovePiece(RunType runType)
+	{
+		// Scan board to fen
+		std::string fen = m_FenGen.GenerateFen();
+		if (fen.empty())
+		{
+			std::cout << "invalid fen" << std::endl;
+			return;
+		}
+		m_IPC.Write("position fen " + fen);
+		std::cout << ("position fen " + fen) << std::endl;
+		m_IPC.Write("go depth 15");
+		std::string bestMove;
+		std::string output;
+		while (true)
+		{
+			DWORD readBytes = 0;
+			m_IPC.Read(engineOutput, BuffSize, readBytes);
+			engineOutput[readBytes] = '\0';
+			output += engineOutput;
+			auto pos = output.find("bestmove");
+			if (pos != std::string::npos && (pos + std::string("bestmove xxxx").size() <= output.size()))
+			{
+				bestMove = output.substr(pos + std::string("bestmove ").size(), std::string("xxxx").size());
+				break;
+			}
+		}
+		if (fen[fen.size() - std::string("b - - 0 1").size()] == 'b')
+		{
+			for (auto& c : bestMove)
+			{
+				if (c >= '0' && c <= '9')
+					c = ('9' - (c - '0'));
+				else
+					c = ('i' - (c - 'a'));
+			}
+			std::cout << "black bestMove: " << bestMove << std::endl;
+		}
+		else
+			std::cout << "red bestMove: " << bestMove << std::endl;
+
+		int col1 = bestMove[0] - 'a';
+		int row1 = '9' - bestMove[1];
+		int col2 = bestMove[2] - 'a';
+		int row2 = '9' - bestMove[3];
+		auto& bc = m_FenGen.boardCoordinate;
+		auto dpi = m_FenGen.GetWindowDpi();
+		POINT from{ bc[row1][col1].x / dpi + m_FenGen.m_ScreenShotTopLeft.x, bc[row1][col1].y / dpi + m_FenGen.m_ScreenShotTopLeft.y };
+		POINT to{ bc[row1][col2].x / dpi + m_FenGen.m_ScreenShotTopLeft.x, bc[row2][col2].y / dpi + m_FenGen.m_ScreenShotTopLeft.y };
+
+		switch (runType)
+		{
+		case RunType::MOVE_PIECE_BY_MESSAGE:
+			MovePieceByMessage(from, to);
+			break;
+		case RunType::MOVE_PIECE_BY_MOUSE:
+			MovePieceByMouse(from, to);
+			break;
+		case RunType::MOVE_PIECE_LIKE_HUMAN:
+			MovePieceLikeHuman(from, to);
+			break;
+		default:
+			MovePieceByMessage(from, to);
+			break;
+		}
+
+		if (activeBash)
+		{
+			// give some time for mouse event to change active window
+			Sleep(500);
+			RECT rect;
+			GetWindowRect(bashWindow, &rect);
+			POINT originPos;
+			GetCursorPos(&originPos);
+			SetCursorPos(rect.left + 20, rect.bottom - 20);
+			mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+			SetCursorPos(originPos.x, originPos.y);
 		}
 	}
 
@@ -371,134 +347,28 @@ namespace axq
 		}
 
 		std::cout << "Setting is ready" << std::endl;
-		std::cout << "Input ngr (new game as red) or ngb (new game as black)" << std::endl;
+		std::cout << "Input ng (new game) to start a new game" << std::endl;
 		std::cout << "Input n (next) or ' (close to Enter) to get best move and move chess piece automatically" << std::endl;
 
-		std::string color = "w";  // default is red
 		std::future<void> fu;
 		while (std::cin >> cmd)
 		{
-			if (cmd == "ngr")
+			if (cmd == "ng")
 			{
-				color = "w";
 				ipc.Write("ucinewgame");
+			}
+			else if (cmd == "a")
+			{
 				m_KeepCheck = true;
-				fu = std::async(&AutoChesser::CheckMyTurn, this, 1000, color, runType);
+				fu = std::async(&AutoChesser::CheckMyTurn, this, 1000, runType);
 			}
-			else if (cmd == "ngb")
-			{
-				color = "b";
-				ipc.Write("ucinewgame");
-			}
-			else if (cmd == "s")
+			else if (cmd == "aq")
 			{
 				m_KeepCheck = false;
 			}
 			else if (cmd == "n" || cmd == "'")  // next
 			{
-				// Scan board to fen
-				std::string fen = m_FenGen.GenerateFen();
-				if (color == "b")
-					std::reverse(fen.begin(), fen.end());
-				//fen = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
-				ipc.Write("position fen " + fen + " " + color + " - - 0 1");
-				std::cout << ("position fen " + fen + " " + color + " - - 0 1") << std::endl;
-				ipc.Write("go depth 15");
-				std::string bestMove;
-				std::string output;
-				while (true)
-				{
-					DWORD readBytes = 0;
-					ipc.Read(engineOutput, BuffSize, readBytes);
-					engineOutput[readBytes] = '\0';
-					output += engineOutput;
-					auto pos = output.find("bestmove");
-					if (pos != std::string::npos && (pos + std::string("bestmove xxxx").size() <= output.size()))
-					{
-						bestMove = output.substr(pos + std::string("bestmove ").size(), std::string("xxxx").size());
-						break;
-					}
-				}
-				if (color == "b")
-				{
-					for (auto& c : bestMove)
-					{
-						switch (c)
-						{
-						case 'a':
-							c = 'i';
-							break;
-						case 'b':
-							c = 'h';
-							break;
-						case 'c':
-							c = 'g';
-							break;
-						case 'd':
-							c = 'f';
-							break;
-						case 'e':
-							c = 'e';
-							break;
-						case 'f':
-							c = 'd';
-							break;
-						case 'g':
-							c = 'c';
-							break;
-						case 'h':
-							c = 'b';
-							break;
-						case 'i':
-							c = 'a';
-							break;
-						default:
-							c = (9 - (c - '0')) + '0';
-							break;
-						}
-					}
-					std::cout << "black bestMove: " << bestMove << std::endl;
-				}
-				else
-					std::cout << "red bestMove: " << bestMove << std::endl;
-
-				int col1 = bestMove[0] - 'a';
-				int row1 = '9' - bestMove[1];
-				int col2 = bestMove[2] - 'a';
-				int row2 = '9' - bestMove[3];
-				auto& bc = m_FenGen.boardCoordinate;
-				auto dpi = m_FenGen.GetWindowDpi();
-				POINT from{ bc[row1][col1].x / dpi + m_FenGen.m_ScreenShotTopLeft.x, bc[row1][col1].y / dpi + m_FenGen.m_ScreenShotTopLeft.y };
-				POINT to{ bc[row1][col2].x / dpi + m_FenGen.m_ScreenShotTopLeft.x, bc[row2][col2].y / dpi + m_FenGen.m_ScreenShotTopLeft.y };
-
-				switch (runType)
-				{
-				case RunType::MOVE_PIECE_BY_MESSAGE:
-					MovePieceByMessage(from, to);
-					break;
-				case RunType::MOVE_PIECE_BY_MOUSE:
-					MovePieceByMouse(from, to);
-					break;
-				case RunType::MOVE_PIECE_LIKE_HUMAN:
-					MovePieceLikeHuman(from, to);
-					break;
-				default:
-					MovePieceByMessage(from, to);
-					break;
-				}
-				
-				if (activeBash)
-				{
-					// give some time for mouse event to change active window
-					Sleep(500);
-					RECT rect;
-					GetWindowRect(bashWindow, &rect);
-					POINT originPos;
-					GetCursorPos(&originPos);
-					SetCursorPos(rect.left + 20, rect.bottom - 20);
-					mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-					SetCursorPos(originPos.x, originPos.y);
-				}
+				MovePiece(runType);
 			}
 		}
 		return AXQResult::ok;
