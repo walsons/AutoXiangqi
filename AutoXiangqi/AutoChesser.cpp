@@ -349,7 +349,7 @@ namespace axq
 		std::cout << "Setting is ready" << std::endl;
 		std::cout << "Input ng (new game) to start a new game" << std::endl;
 		std::cout << "Input n (next) or ' (close to Enter) to get best move and move chess piece automatically" << std::endl;
-
+		std::cout << "Input a (auto) to move chess automatically without command, input aq to quit" << std::endl;
 		std::future<void> fu;
 		while (std::cin >> cmd)
 		{

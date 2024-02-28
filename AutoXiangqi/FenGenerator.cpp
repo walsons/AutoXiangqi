@@ -236,12 +236,94 @@ namespace axq
 
     std::string FenGenerator::GenerateFen()
     {
+        clock_t beginTime = clock();
         cv::Mat img;
         BoardScreenShot(img);
-        clock_t beginTime = clock();
         std::string fen;
         std::unordered_map<char, short> m;
         int color = 0;
+        auto recognize = [&](int rowStart, int rowEnd, std::string& fenSegment) {
+            for (int i = rowStart; i < rowEnd; ++i)
+            {
+                for (int j = 0; j < 9; ++j)
+                {
+                    auto& b = boardCoordinate;
+                    auto rect = cv::Rect(b[i][j].x - pieceRadius, b[i][j].y - pieceRadius, 2 * pieceRadius, 2 * pieceRadius);
+                    cv::Mat onePiece = img(rect);
+                    // Compare to all piece
+                    int minValue = 0x0FFFFFFF;
+                    std::string target;
+                    // a method to accelerate
+                    cv::Mat possiblePiece = pieceID[boardPointInfo[i][j].name];
+                    int outScore = SimilarityScore(onePiece, possiblePiece);
+                    int diff = outScore * 0.05;
+                    if (outScore - diff < boardPointInfo[i][j].score && outScore + diff > boardPointInfo[i][j].score)
+                    {
+                        minValue = outScore;
+                        target = boardPointInfo[i][j].name;
+                    }
+                    else
+                    {
+                        for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
+                        {
+                            int score = SimilarityScore(onePiece, it->second);
+                            if (score < minValue)
+                            {
+                                minValue = score;
+                                target = it->first;
+                            }
+                        }
+                    }
+                    boardPointInfo[i][j].name = target;
+                    boardPointInfo[i][j].score = minValue;
+                    int selfColor = 0;
+                    bool valid = IsValidCharInFen((target.size() == 1 ? target[0] : 'e'), i, j, m, selfColor);
+                    if (!valid)
+                    {
+                        fenSegment = "";
+                        return;
+                    }
+                    if (selfColor != 0)
+                    {
+                        if (color == -selfColor)
+                        {
+                            fenSegment = "";
+                            return;
+                        }
+                        color = selfColor;
+                    }
+                    if (target.size() == 1)
+                        fenSegment += target;
+                    else
+                    {
+                        if (fenSegment.empty() || (fenSegment.back() < '0' || fenSegment.back() >= '9'))
+                            fenSegment += "1";
+                        else
+                            fenSegment.back() = fenSegment.back() + 1;
+                    }
+                }
+                fenSegment += "/";
+            }
+        };
+        std::string fen1;
+        std::thread t1{recognize, 0, 3, std::ref(fen1)};
+        std::string fen3;
+        std::thread t3{recognize, 7, 10, std::ref(fen3)};
+        // Since JJ Xiangqi has animation in the middle chessboard, snipping a new photo after 1s
+        clock_t middleTime = clock();
+        int diff = middleTime - beginTime;
+        if (diff < 1500)
+            Sleep(1500 - diff);
+        std::cout << "diff: " << diff << std::endl;
+        BoardScreenShot(img);
+        std::string fen2;
+        recognize(3, 7, fen2);
+        t1.join();
+        t3.join();
+        if (fen1.empty() || fen2.empty() || fen3.empty())
+            return "";
+        fen = fen1 + fen2 + fen3;
+/*
         for (int i = 0; i < 10; ++i)
         {
             for (int j = 0; j < 9; ++j)
@@ -298,10 +380,10 @@ namespace axq
             }
             fen += "/";
         }
+*/
         fen.pop_back();
         clock_t endTime = clock();
         std::cout << "time cost: " << (endTime - beginTime) << std::endl;
-        std::cout << "I'm " << color << " (red is 1, black is -1)" << std::endl;
         if (color == -1)
             std::reverse(fen.begin(), fen.end());
         // "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
