@@ -62,11 +62,6 @@ namespace axq
         ReleaseDC(NULL, hScreenDC);
     }
 
-    FenGenerator::FenGenerator(POINT topLeft, POINT bottomRight)
-        : photoTopLeft(topLeft), photoBottomRight(bottomRight)
-    {
-    }
-
 	double FenGenerator::GetWindowDpi()
 	{
 		HWND hd = GetDesktopWindow();
@@ -102,14 +97,9 @@ namespace axq
 		int height = GetDeviceCaps(hScreenDC, VERTRES) * dpi;
 		HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, width, height);
 		HGDIOBJ oldObject = SelectObject(hMemoryDC, hBitmap);
-		int shotWidth = (photoBottomRight.x - photoTopLeft.x) * dpi;
-		int shotHeight = (photoBottomRight.y - photoTopLeft.y) * dpi;
-        // set cursor to another place in case affect recognition
-        POINT originPos;
-        GetCursorPos(&originPos);
-        SetCursorPos(0, 0);
-		BitBlt(hMemoryDC, 0, 0, shotWidth, shotHeight, hScreenDC, dpi * photoTopLeft.x, dpi * photoTopLeft.y, SRCCOPY);
-        SetCursorPos(originPos.x, originPos.y);
+		int shotWidth = (m_ScreenShotBottomRight.x - m_ScreenShotTopLeft.x) * dpi;
+		int shotHeight = (m_ScreenShotBottomRight.y - m_ScreenShotTopLeft.y) * dpi;
+		BitBlt(hMemoryDC, 0, 0, shotWidth, shotHeight, hScreenDC, dpi * m_ScreenShotTopLeft.x, dpi * m_ScreenShotTopLeft.y, SRCCOPY);
         BITMAPINFOHEADER bi;
 		bi.biSize = sizeof(BITMAPINFOHEADER);
 		bi.biWidth = width;
@@ -130,6 +120,11 @@ namespace axq
         cv::cvtColor(screenShot(boardRect), grayImage, cv::COLOR_BGR2GRAY);
 		boardScreenShot = grayImage.clone();
 	}
+
+    void FenGenerator::GameTimerShot(cv::Mat& gameTimerShot)
+    {
+        gameTimerShot = SnippingGray(NULL, m_GameTimerTopLeft, m_GameTimerBottomRight).clone();
+    }
 
 	void FenGenerator::MakePieceFingerPrint(cv::Mat boardScreenShot)
 	{
@@ -218,6 +213,27 @@ namespace axq
         pieceID["blank10"] = src(rect);
 	}
 
+    bool FenGenerator::IsMyTurn()
+    {
+        cv::Mat img;
+        GameTimerShot(img);
+        cv::Mat origin = cv::imread("gameTimer.png", 0);
+        int outScore = SimilarityScore(img, origin);
+        assert(img.rows == origin.rows);
+        assert(img.cols == origin.cols);
+        int score = 0;
+        for (int i = 0; i < img.rows; ++i)
+        {
+            for (int j = 0; j < img.cols; ++j)
+            {
+                score += std::abs(img.at<uchar>(i, j) - origin.at<uchar>(i, j));
+            }
+        }
+        if (score > 5 * img.rows * img.cols)
+            return true;
+        return false;
+    }
+
     std::string FenGenerator::GenerateFen()
     {
         cv::Mat img;
@@ -290,6 +306,40 @@ namespace axq
         clock_t endTime = clock();
         std::cout << "time cost: " << (endTime - beginTime) << std::endl;
         return fen;
+    }
+
+    cv::Mat FenGenerator::SnippingGray(HWND win, POINT tl, POINT br)
+    {
+        // Screen shot
+        HDC hdc = GetDC(win);
+        HDC hMemoryDC = CreateCompatibleDC(hdc);
+        int dpi = GetWindowDpi();
+        int width = GetDeviceCaps(hdc, HORZRES) * dpi;
+        int height = GetDeviceCaps(hdc, VERTRES) * dpi;
+        HBITMAP hBitmap = CreateCompatibleBitmap(hdc, width, height);
+        HGDIOBJ oldObject = SelectObject(hMemoryDC, hBitmap);
+        int shotWidth = (br.x - tl.x) * dpi;
+        int shotHeight = (br.y - tl.y) * dpi;
+        BitBlt(hMemoryDC, 0, 0, shotWidth, shotHeight, hdc, dpi * tl.x, dpi * tl.y, SRCCOPY);
+        BITMAPINFOHEADER bi;
+        bi.biSize = sizeof(BITMAPINFOHEADER);
+        bi.biWidth = width;
+        bi.biHeight = -height;
+        bi.biPlanes = 1;
+        bi.biBitCount = 24;
+        bi.biCompression = BI_RGB;
+        bi.biSizeImage = 0;
+        std::vector<uchar> buf(width * height * 3);
+        GetDIBits(hMemoryDC, hBitmap, 0, height,
+            buf.data(), (BITMAPINFO*)&bi,
+            DIB_RGB_COLORS);
+        // Transform to Mat
+        cv::Mat screenShot(height, width, CV_8UC3, buf.data());
+        // Truncate and change to gray
+        cv::Rect boardRect = { 0, 0, shotWidth, shotHeight };
+        cv::Mat grayImage;
+        cv::cvtColor(screenShot(boardRect), grayImage, cv::COLOR_BGR2GRAY);
+        return grayImage.clone();
     }
 
     void FenGenerator::SetBoardCoordinate(cv::Mat boardScreenShot)

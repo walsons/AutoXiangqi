@@ -16,20 +16,24 @@ namespace axq
 	{
 	public:
 		FenGenerator() = default;
-		FenGenerator(POINT topLeft, POINT bottomRight);
 		double GetWindowDpi();
 		void BoardScreenShot(cv::Mat& boardScreenShot);
+		void GameTimerShot(cv::Mat& gameTimerShot);
 		void MakePieceFingerPrint(cv::Mat boardScreenShot);
+		bool IsMyTurn();
 		std::string GenerateFen();
 
 	private:
+		cv::Mat SnippingGray(HWND win, POINT tl, POINT br);
 		void SetBoardCoordinate(cv::Mat boardScreenShot);
 		int SimilarityScore(cv::Mat img1, cv::Mat img2);
 
 	public:
-		POINT photoTopLeft = { 0, 0 };
-		POINT photoBottomRight = { 0, 0 };
+		POINT m_ScreenShotTopLeft = { 0, 0 };
+		POINT m_ScreenShotBottomRight = { 0, 0 };
 		POINT boardCoordinate[10][9];
+		POINT m_GameTimerTopLeft = { 0, 0 };
+		POINT m_GameTimerBottomRight = { 0, 0 };
 		long boardTop = 0x0FFFFFFF;
 		long boardLeft = 0x0FFFFFFF;
 		long boardBottom = 0;

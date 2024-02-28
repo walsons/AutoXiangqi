@@ -27,15 +27,16 @@ namespace axq
 
 		AXQResult ConfigureSetting();
 
-		AXQResult SetGameWindowPos();
-
-		AXQResult LocateChessBoard();
-
-		AXQResult LocateWindow();
-
 		AXQResult Run(IPC& ipc, RunType runType);
 
 	private:
+		AXQResult SetGameWindowPos();
+		AXQResult AnalyzeChessBoard();
+		AXQResult LocateGameTimer();
+		AXQResult LocateWindow();
+
+		void CheckMyTurn(int interval, std::string color, RunType runType);
+
 		void MovePieceByMessage(POINT from, POINT to);
 		void MovePieceByMouse(POINT from, POINT to);
 		void MovePieceLikeHuman(POINT from, POINT to);
@@ -44,8 +45,6 @@ namespace axq
 	public:
 		IPC& m_IPC;
 		FenGenerator m_FenGen;
-		POINT m_ScreenShotTopLeft = { 0, 0 };
-		POINT m_ScreenShotBottomRight = { 0, 0 };
 		HWND gameWindow = nullptr;
 		HWND bashWindow = nullptr;
 		bool activeBash = false;
@@ -57,6 +56,8 @@ namespace axq
 		bool m_ReadSetting = false;
 		std::string m_SettingFileName;
 		std::unordered_map<std::string, std::string> m_Settings;
+		std::atomic<bool> m_MyTurn = false;
+		std::atomic<bool> m_KeepCheck = false;
 	};
 
 	template <>
