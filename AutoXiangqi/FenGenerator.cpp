@@ -294,6 +294,8 @@ namespace axq
         std::string fen;
         std::unordered_map<char, short> m;
         std::atomic<int> color = 0;
+        std::unordered_map<char, std::vector<POINT>> mDebugCor;
+        std::unordered_map<char, std::vector<int>> mDebugScore;
         auto recognize = [&](int rowStart, int rowEnd, std::string& fenSegment) {
             for (int i = rowStart; i < rowEnd; ++i)
             {
@@ -334,12 +336,25 @@ namespace axq
                     bool valid;
                     {
                         std::lock_guard<std::mutex> lock(m_Lock);
-                        valid = IsValidCharInFen((target.size() == 1 ? target[0] : 'e'), i, j, m, selfColor);
+                        char c = (target.size() == 1 ? target[0] : 'e');
+                        valid = IsValidCharInFen(c, i, j, m, selfColor);
+                        mDebugCor[c].push_back({ i, j });
+                        mDebugScore[c].push_back(minValue);
                     }
                     if (!valid)
                     {
-                        std::cout << "error: " << i << ", " << j << "   " << (target.size() == 1 ? target[0] : 'e')
-                            << " " << target  << " " << m[(target.size() == 1 ? target[0] : 'e')] << std::endl;
+                        char c = (target.size() == 1 ? target[0] : 'e');
+                        std::cout << "recognize error: " << c << std::endl;
+                        for (auto& c : mDebugCor[c])
+                        {
+                            std::cout << c.x << "," << c.y << " / ";
+                        }
+                        std::cout << std::endl;
+                        for (auto& c : mDebugScore[c])
+                        {
+                            std::cout << c << " / ";
+                        }
+                        std::cout << std::endl;
                         fenSegment = "";
                         return;
                     }
