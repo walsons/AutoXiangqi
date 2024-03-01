@@ -20,15 +20,19 @@ namespace axq
 		void BoardScreenShot(cv::Mat& boardScreenShot);
 		void GameTimerShot(cv::Mat& gameTimerShot);
 		void MakePieceFingerPrint(cv::Mat boardScreenShot);
+		void MakeNewBlankPieceFingerPrint();
 		bool IsMyTurn();
 		std::string GenerateFen();
+		void CalibrateBoard(bool state);
 
 	private:
 		cv::Mat SnippingGray(HWND win, POINT tl, POINT br);
 		void SetBoardCoordinate(cv::Mat boardScreenShot);
+		void SetBoardCoordinateV2(cv::Mat boardScreenShot);
 		int SimilarityScore(cv::Mat img1, cv::Mat img2);
 		// selfColor: red is 1, black is -1, unknown is 0
 		bool IsValidCharInFen(char key, int x, int y, std::unordered_map<char, short>& m, int& selfColor);
+		void drawBoard(POINT tl, POINT tr, POINT br, POINT bl);
 
 	public:
 		POINT m_ScreenShotTopLeft = { 0, 0 };
@@ -46,6 +50,7 @@ namespace axq
 		BoardPointInfo boardPointInfo[10][9];
 		std::unordered_map<std::string, cv::Mat> pieceID;
 		std::mutex m_Lock;
+		std::atomic<bool> m_DrawThreadRunning = false;
 	};
 }
 

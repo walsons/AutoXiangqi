@@ -123,6 +123,24 @@ namespace axq
 			line = "m_ScreenShotBottomRight=" + std::to_string(m_FenGen.m_ScreenShotBottomRight.x) + "," + std::to_string(m_FenGen.m_ScreenShotBottomRight.y);
 			m_RW << line << std::endl;
 		}
+
+		/*****************************/
+		/*std::cout << "Input show or stop to calibrate board, input exit to exit calibration" << std::endl;
+		std::string cali;
+		std::thread drawThread;
+		while (std::cin >> cali)
+		{
+			if (cali == "show")
+				m_FenGen.CalibrateBoard(true);
+			else if (cali == "stop")
+			{
+				m_FenGen.CalibrateBoard(false);
+				drawThread.join();
+			}
+			else if (cali == "exit")
+				break;
+		}*/
+		/*****************************/
 		
 		cv::Mat boardScreenShot;
 		if (m_ReadSetting)
@@ -300,9 +318,9 @@ namespace axq
 			if (m_MyTurn)
 			{
 				MovePiece(runType);
-				Sleep(2000);
 			}
-			Sleep(interval);
+			else
+				Sleep(interval);
 		}
 	}
 
@@ -319,7 +337,7 @@ namespace axq
 		int symbol2 = FenSymbol(m_LastFen);
 		if (symbol1 != symbol2)
 		{
-			Sleep(2000);
+			Sleep(1800);
 			std::cout << "symbol1: " << symbol1 << ",   " << "symbol2: " << symbol2 << std::endl;
 			fen = m_FenGen.GenerateFen();
 			if (fen.empty())
@@ -422,6 +440,8 @@ namespace axq
 			mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 			SetCursorPos(originPos.x, originPos.y);
 		}
+		// give time to game to play animation
+		Sleep(2500);
 	}
 
 	AXQResult AutoChesser::Run(IPC& ipc, RunType runType)
@@ -447,6 +467,7 @@ namespace axq
 		std::cout << "Input ng (new game) to start a new game" << std::endl;
 		std::cout << "Input n (next) or ' (close to Enter) to get best move and move chess piece automatically" << std::endl;
 		std::cout << "Input a (auto) to move chess automatically without command, input aq to quit" << std::endl;
+		std::cout << "Input blank to make new blank piece finger print" << std::endl;
 		std::future<void> fu;
 		while (std::cin >> cmd)
 		{
@@ -459,13 +480,17 @@ namespace axq
 				m_KeepCheck = true;
 				fu = std::async(&AutoChesser::CheckMyTurn, this, 500, runType);
 			}
-			else if (cmd == "aq")
+			else if (cmd == "q")
 			{
 				m_KeepCheck = false;
 			}
 			else if (cmd == "n" || cmd == "'")  // next
 			{
 				MovePiece(runType);
+			}
+			else if (cmd == "blank")
+			{
+				m_FenGen.MakeNewBlankPieceFingerPrint();
 			}
 		}
 		return AXQResult::ok;

@@ -1,6 +1,7 @@
 #include "FenGenerator.h"
 #include <Windows.h>
 #include <wingdi.h>
+#include <fstream>
 
 namespace axq
 {
@@ -47,12 +48,12 @@ namespace axq
             draw(p1.y, p2.y, &calX);
     }
 
-    std::atomic<bool> drawThreadRunning = true;
+    
 
-    void drawBoard(POINT tl, POINT tr, POINT br, POINT bl)
+    void FenGenerator::drawBoard(POINT tl, POINT tr, POINT br, POINT bl)
     {
         HDC hScreenDC = GetDC(NULL);
-        while (drawThreadRunning)
+        while (m_DrawThreadRunning)
         {
             drawLine(hScreenDC, tl, tr);
             drawLine(hScreenDC, tr, br);
@@ -60,6 +61,35 @@ namespace axq
             drawLine(hScreenDC, bl, tl);
         }
         ReleaseDC(NULL, hScreenDC);
+    }
+
+    void FenGenerator::CalibrateBoard(bool state)
+    {
+        m_DrawThreadRunning = state;
+        if (state)
+        {
+            m_DrawThreadRunning = true;
+            std::fstream reader("boardCorrdinate.txt", std::ios::in);
+            std::unordered_map<std::string, int> m;
+            std::string line;
+            while (std::getline(reader, line))
+            {
+                size_t pos = line.find("=");
+                if (pos != std::string::npos)
+                {
+                    std::string key = line.substr(0, pos);
+                    std::string value = line.substr(pos + 1);
+                    m.insert({ key, stoi(value) });
+                }
+            }
+            auto dpi = GetWindowDpi();
+            int top = m["boardTop"] + m_ScreenShotTopLeft.y * dpi;
+            int left = m["boardLeft"] + m_ScreenShotTopLeft.x * dpi;
+            int bottom = m["boardBottom"] + m_ScreenShotTopLeft.y * dpi;
+            int right = m["boardRight"] + m_ScreenShotTopLeft.x * dpi;
+            POINT tl{ left, top }, tr{ right, top }, br{ right, bottom }, bl{ left, bottom };
+            drawBoard(tl, tr, br, bl);
+        }
     }
 
 	double FenGenerator::GetWindowDpi()
@@ -134,16 +164,6 @@ namespace axq
         auto& r = pieceRadius;
         cv::Rect rect(0, 0, 0, 0);
 
-        /*std::cout << (boardCoordinate[0][0].x + photoTopLeft.x * 2) << ", " << (boardCoordinate[0][0].y + photoTopLeft.y * 2) << std::endl;
-        std::cout << (boardCoordinate[0][8].x + photoTopLeft.x * 2) << ", " << (boardCoordinate[0][8].y + photoTopLeft.y * 2) << std::endl;
-        std::cout << (boardCoordinate[9][8].x + photoTopLeft.x * 2) << ", " << (boardCoordinate[9][8].y + photoTopLeft.y * 2) << std::endl;
-        std::cout << (boardCoordinate[9][0].x + photoTopLeft.x * 2) << ", " << (boardCoordinate[9][0].y + photoTopLeft.y * 2) << std::endl;
-        drawBoard(
-            { boardCoordinate[0][0].x + photoTopLeft.x * 2, boardCoordinate[0][0].y + photoTopLeft.y * 2 },
-            { boardCoordinate[0][8].x + photoTopLeft.x * 2, boardCoordinate[0][8].y + photoTopLeft.y * 2 },
-            { boardCoordinate[9][8].x + photoTopLeft.x * 2, boardCoordinate[9][8].y + photoTopLeft.y * 2 },
-            { boardCoordinate[9][0].x + photoTopLeft.x * 2, boardCoordinate[9][0].y + photoTopLeft.y * 2 });*/
-
         /***** Finger print for red *****/
         // r: ³µ [9][0]
         rect = cv::Rect(b[9][0].x - r, b[9][0].y - r, 2 * r, 2 * r);
@@ -191,27 +211,59 @@ namespace axq
         pieceID["p"] = src(rect);
 
         /***** Finger print for blank *****/
-        rect = cv::Rect(b[4][0].x - r, b[4][0].y - r, 2 * r, 2 * r);
+        rect = cv::Rect(b[4][3].x - r, b[4][3].y - r, 2 * r, 2 * r);
         pieceID["blank1"] = src(rect);
-        rect = cv::Rect(b[4][2].x - r, b[4][2].y - r, 2 * r, 2 * r);
+        rect = cv::Rect(b[4][5].x - r, b[4][5].y - r, 2 * r, 2 * r);
         pieceID["blank2"] = src(rect);
-        rect = cv::Rect(b[4][4].x - r, b[4][4].y - r, 2 * r, 2 * r);
-        pieceID["blank3"] = src(rect);
-        rect = cv::Rect(b[4][6].x - r, b[4][6].y - r, 2 * r, 2 * r);
-        pieceID["blank4"] = src(rect);
-        rect = cv::Rect(b[4][8].x - r, b[4][8].y - r, 2 * r, 2 * r);
-        pieceID["blank5"] = src(rect);
         rect = cv::Rect(b[5][0].x - r, b[5][0].y - r, 2 * r, 2 * r);
-        pieceID["blank6"] = src(rect);
+        pieceID["blank3"] = src(rect);
         rect = cv::Rect(b[5][2].x - r, b[5][2].y - r, 2 * r, 2 * r);
-        pieceID["blank7"] = src(rect);
+        pieceID["blank4"] = src(rect);
         rect = cv::Rect(b[5][4].x - r, b[5][4].y - r, 2 * r, 2 * r);
-        pieceID["blank8"] = src(rect);
+        pieceID["blank5"] = src(rect);
         rect = cv::Rect(b[5][6].x - r, b[5][6].y - r, 2 * r, 2 * r);
-        pieceID["blank9"] = src(rect);
+        pieceID["blank6"] = src(rect);
         rect = cv::Rect(b[5][8].x - r, b[5][8].y - r, 2 * r, 2 * r);
+        pieceID["blank7"] = src(rect);
+        rect = cv::Rect(b[8][4].x - r, b[8][4].y - r, 2 * r, 2 * r);
+        pieceID["blank8"] = src(rect);
+        rect = cv::Rect(b[8][2].x - r, b[8][2].y - r, 2 * r, 2 * r);
+        pieceID["blank9"] = src(rect);
+        rect = cv::Rect(b[8][6].x - r, b[8][6].y - r, 2 * r, 2 * r);
         pieceID["blank10"] = src(rect);
 	}
+
+    void FenGenerator::MakeNewBlankPieceFingerPrint()
+    {
+        cv::Mat boardScreenShot;
+        BoardScreenShot(boardScreenShot);
+        auto& src = boardScreenShot;
+        auto& b = boardCoordinate;
+        auto& r = pieceRadius;
+        cv::Rect rect(0, 0, 0, 0);
+
+        /***** Finger print for blank *****/
+        rect = cv::Rect(b[4][3].x - r, b[4][3].y - r, 2 * r, 2 * r);
+        pieceID["blank1"] = src(rect);
+        rect = cv::Rect(b[4][5].x - r, b[4][5].y - r, 2 * r, 2 * r);
+        pieceID["blank2"] = src(rect);
+        rect = cv::Rect(b[5][0].x - r, b[5][0].y - r, 2 * r, 2 * r);
+        pieceID["blank3"] = src(rect);
+        rect = cv::Rect(b[5][2].x - r, b[5][2].y - r, 2 * r, 2 * r);
+        pieceID["blank4"] = src(rect);
+        rect = cv::Rect(b[5][4].x - r, b[5][4].y - r, 2 * r, 2 * r);
+        pieceID["blank5"] = src(rect);
+        rect = cv::Rect(b[5][6].x - r, b[5][6].y - r, 2 * r, 2 * r);
+        pieceID["blank6"] = src(rect);
+        rect = cv::Rect(b[5][8].x - r, b[5][8].y - r, 2 * r, 2 * r);
+        pieceID["blank7"] = src(rect);
+        rect = cv::Rect(b[8][4].x - r, b[8][4].y - r, 2 * r, 2 * r);
+        pieceID["blank8"] = src(rect);
+        rect = cv::Rect(b[8][2].x - r, b[8][2].y - r, 2 * r, 2 * r);
+        pieceID["blank9"] = src(rect);
+        rect = cv::Rect(b[8][6].x - r, b[8][6].y - r, 2 * r, 2 * r);
+        pieceID["blank10"] = src(rect);
+    }
 
     bool FenGenerator::IsMyTurn()
     {
@@ -256,7 +308,7 @@ namespace axq
                     // a method to accelerate
                     cv::Mat possiblePiece = pieceID[boardPointInfo[i][j].name];
                     int outScore = SimilarityScore(onePiece, possiblePiece);
-                    if (outScore - 5 < boardPointInfo[i][j].score && outScore + 5 > boardPointInfo[i][j].score)
+                    if (outScore - 5 <= boardPointInfo[i][j].score && outScore + 5 >= boardPointInfo[i][j].score)
                     {
                         minValue = outScore;
                         target = boardPointInfo[i][j].name;
@@ -395,6 +447,50 @@ namespace axq
             boardLeft = boardLeft < circles[i][0] ? boardLeft : circles[i][0];
             boardBottom = boardBottom > circles[i][1] ? boardBottom : circles[i][1];
             boardRight = boardRight > circles[i][0] ? boardRight : circles[i][0];
+            pieceRadius += circles[i][2];
+        }
+        std::cout << boardTop << " " << boardLeft << " " << boardBottom << " " << boardRight << std::endl;
+        pieceRadius /= circles.size();
+
+        int hStep = (boardRight - boardLeft) / 8;
+        int vStep = (boardBottom - boardTop) / 9;
+        for (int i = 0; i < 10; ++i)
+        {
+            for (int j = 0; j < 9; ++j)
+            {
+                boardCoordinate[i][j] = POINT{ boardLeft + j * hStep, boardTop + i * vStep };
+            }
+        }
+    }
+
+    void FenGenerator::SetBoardCoordinateV2(cv::Mat boardScreenShot)
+    {
+        std::vector<cv::Vec3f> circles;
+        int minDist = 30;   // minimum distance
+        int param1 = 100;     // Canny
+        int param2 = 15;     // Hough
+        int minRadius = 30;   // min radius
+        int maxRadius = 35;   // max radius
+        cv::HoughCircles(boardScreenShot, circles, cv::HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, maxRadius);
+        for (size_t i = 0; i < circles.size(); i++)
+        {
+            std::fstream reader("boardCorrdinate.txt", std::ios::in);
+            std::unordered_map<std::string, int> m;
+            std::string line;
+            while (std::getline(reader, line))
+            {
+                size_t pos = line.find("=");
+                if (pos != std::string::npos)
+                {
+                    std::string key = line.substr(0, pos);
+                    std::string value = line.substr(pos + 1);
+                    m.insert({ key, stoi(value) });
+                }
+            }
+            boardTop = m["boardTop"];
+            boardLeft = m["boardLeft"];
+            boardBottom = m["boardBottom"];
+            boardRight = m["boardRight"];
             pieceRadius += circles[i][2];
         }
         pieceRadius /= circles.size();
