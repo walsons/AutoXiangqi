@@ -45,6 +45,7 @@ namespace axq
 	private:
 		BoardPointInfo boardPointInfo[10][9];
 		std::unordered_map<std::string, cv::Mat> pieceID;
+		std::mutex m_Lock;
 	};
 }
 

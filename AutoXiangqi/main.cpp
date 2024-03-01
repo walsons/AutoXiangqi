@@ -31,14 +31,14 @@ int main()
 	if (ret != axq::AXQResult::ok)
 		return ErrorExit("ipc.InitIPC()");
 
-	axq::Pikafish engine("pikafish", "pikafish_x86-64-vnni256.exe", ipc);
-	engine.InitEngine();
-	ret = engine.Run();
+	axq::ChessEngine* engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe", ipc);
+	engine->InitEngine();
+	ret = engine->Run();
 	if (ret != axq::AXQResult::ok)
 		return ErrorExit("engine.run()");
 
-	axq::AutoChesser autoChesser(ipc);
-	ret = autoChesser.ConfigureEngine<axq::Pikafish>(engine, ipc);
+	axq::AutoChesser autoChesser(ipc, engine);
+	ret = autoChesser.ConfigureEngine<axq::Pikafish>(*engine, ipc);
 	if (ret != axq::AXQResult::ok)
 		return ErrorExit("autoChesser.ConfigureEngine<axq::Pikafish>(engine, ipc)");
 	ret = autoChesser.ConfigureSetting();
@@ -47,7 +47,7 @@ int main()
 	autoChesser.activeBash = true;
 	autoChesser.Run(ipc, axq::RunType::MOVE_PIECE_BY_MESSAGE);
 
-	CloseHandles(engine.pi.hProcess, engine.pi.hThread, ipc.ParentWriteNode, ipc.ParentReadNode, ipc.ChildReadNode, ipc.ChildWriteNode);
+	CloseHandles(engine->pi.hProcess, engine->pi.hThread, ipc.ParentWriteNode, ipc.ParentReadNode, ipc.ChildReadNode, ipc.ChildWriteNode);
 	//system("pause");
 	return 0;
 }

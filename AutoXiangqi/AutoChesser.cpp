@@ -3,8 +3,8 @@
 
 namespace axq
 {
-	AutoChesser::AutoChesser(IPC& ipc, const std::string& settingFileName)
-		: m_IPC(ipc), m_SettingFileName(settingFileName)
+	AutoChesser::AutoChesser(IPC& ipc, ChessEngine* chessEngine, const std::string& settingFileName)
+		: m_IPC(ipc), m_Engine(chessEngine), m_SettingFileName(settingFileName)
 	{
 	}
 
@@ -12,9 +12,19 @@ namespace axq
 	{
 		std::cout << "Read previous setting? input y or n" << std::endl;
 		std::string cmd;
-		std::cin >> cmd;
-		if (cmd == "y")
-			m_ReadSetting = true;
+		while (std::cin >> cmd)
+		{
+			if (cmd == "y")
+			{
+				m_ReadSetting = true;
+				break;
+			}
+			else if (cmd == "n")
+			{
+				m_ReadSetting = false;
+				break;
+			}	
+		}
 		if (m_ReadSetting)
 			m_RW.open(m_SettingFileName, std::ios::in);
 		else
@@ -220,18 +230,66 @@ namespace axq
 		}
 		gameWindow = WindowFromPoint(curPoint);
 
-		// Bash
-		std::cout << "Please put the mouse in the this bash, input \"bash\" for sure" << std::endl;
-		while (std::cin >> cmd)
-		{
-			if (cmd == "bash")
-				break;
-		}
-		if (!GetCursorPos(&curPoint))
-			return AXQResult::fail;
-		bashWindow = WindowFromPoint(curPoint);
-
 		return AXQResult::ok;
+	}
+
+	int AutoChesser::FenSymbol(const std::string& fen)
+	{
+		char selfColor = fen[fen.size() - std::string("b - - 0 1").size()];
+		int symbol = 0;
+		for (auto c : fen)
+		{
+			switch (c)
+			{
+			case 'r':
+				symbol += (1 << 13);
+				break;
+			case 'n':
+				symbol += (1 << 12);
+				break;
+			case 'b':
+				symbol += (1 << 11);
+				break;
+			case 'a':
+				symbol += (1 << 10);
+				break;
+			case 'k':
+				symbol += (1 << 9);
+				break;
+			case 'c':
+				symbol += (1 << 8);
+				break;
+			case 'p':
+				symbol += (1 << 7);
+				break;
+			case 'R':
+				symbol += (1 << 6);
+				break;
+			case 'N':
+				symbol += (1 << 5);
+				break;
+			case 'B':
+				symbol += (1 << 4);
+				break;
+			case 'A':
+				symbol += (1 << 3);
+				break;
+			case 'K':
+				symbol += (1 << 2);
+				break;
+			case 'C':
+				symbol += (1 << 1);
+				break;
+			case 'P':
+				symbol += (1 << 0);
+				break;
+			default:
+				break;
+			}
+		}
+		if (selfColor == 'b')
+			symbol -= (1 << 4);
+		return symbol;
 	}
 
 	void AutoChesser::CheckMyTurn(int interval, RunType runType)
@@ -242,6 +300,7 @@ namespace axq
 			if (m_MyTurn)
 			{
 				MovePiece(runType);
+				Sleep(2000);
 			}
 			Sleep(interval);
 		}
@@ -256,6 +315,44 @@ namespace axq
 			std::cout << "invalid fen" << std::endl;
 			return;
 		}
+		int symbol1 = FenSymbol(fen);
+		int symbol2 = FenSymbol(m_LastFen);
+		if (symbol1 != symbol2)
+		{
+			Sleep(2000);
+			std::cout << "symbol1: " << symbol1 << ",   " << "symbol2: " << symbol2 << std::endl;
+			fen = m_FenGen.GenerateFen();
+			if (fen.empty())
+			{
+				return;
+			}
+		}
+		// Check engine is still alive
+		DWORD engineResult = 0;
+		GetExitCodeProcess(m_Engine->pi.hProcess, &engineResult);
+		if (engineResult != STILL_ACTIVE)
+		{
+			if (m_Engine != nullptr)
+			{
+				delete m_Engine;
+				m_Engine = nullptr;
+			}
+			m_Engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe", m_IPC);
+			m_Engine->InitEngine();
+			auto ret = m_Engine->Run();
+			if (ret != axq::AXQResult::ok)
+			{
+				std::cout << "start engine failed" << std::endl;
+				return;
+			}
+			ConfigureEngine<axq::Pikafish>(*m_Engine, m_IPC);
+			if (ret != axq::AXQResult::ok)
+			{
+				std::cout << "start engine failed" << std::endl;
+				return;
+			}
+		}
+		m_LastFen = fen;
 		m_IPC.Write("position fen " + fen);
 		std::cout << ("position fen " + fen) << std::endl;
 		m_IPC.Write("go depth 15");
@@ -318,7 +415,7 @@ namespace axq
 			// give some time for mouse event to change active window
 			Sleep(500);
 			RECT rect;
-			GetWindowRect(bashWindow, &rect);
+			GetWindowRect(GetConsoleWindow(), &rect);
 			POINT originPos;
 			GetCursorPos(&originPos);
 			SetCursorPos(rect.left + 20, rect.bottom - 20);
@@ -360,7 +457,7 @@ namespace axq
 			else if (cmd == "a")
 			{
 				m_KeepCheck = true;
-				fu = std::async(&AutoChesser::CheckMyTurn, this, 1000, runType);
+				fu = std::async(&AutoChesser::CheckMyTurn, this, 500, runType);
 			}
 			else if (cmd == "aq")
 			{

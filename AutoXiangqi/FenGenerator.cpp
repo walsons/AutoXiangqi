@@ -229,7 +229,7 @@ namespace axq
                 score += std::abs(img.at<uchar>(i, j) - origin.at<uchar>(i, j));
             }
         }
-        if (score > 5 * img.rows * img.cols)
+        if (score > 20 * img.rows * img.cols)
             return true;
         return false;
     }
@@ -241,7 +241,7 @@ namespace axq
         BoardScreenShot(img);
         std::string fen;
         std::unordered_map<char, short> m;
-        int color = 0;
+        std::atomic<int> color = 0;
         auto recognize = [&](int rowStart, int rowEnd, std::string& fenSegment) {
             for (int i = rowStart; i < rowEnd; ++i)
             {
@@ -256,8 +256,7 @@ namespace axq
                     // a method to accelerate
                     cv::Mat possiblePiece = pieceID[boardPointInfo[i][j].name];
                     int outScore = SimilarityScore(onePiece, possiblePiece);
-                    int diff = outScore * 0.05;
-                    if (outScore - diff < boardPointInfo[i][j].score && outScore + diff > boardPointInfo[i][j].score)
+                    if (outScore - 5 < boardPointInfo[i][j].score && outScore + 5 > boardPointInfo[i][j].score)
                     {
                         minValue = outScore;
                         target = boardPointInfo[i][j].name;
@@ -274,12 +273,21 @@ namespace axq
                             }
                         }
                     }
-                    boardPointInfo[i][j].name = target;
-                    boardPointInfo[i][j].score = minValue;
+                    {
+                        std::lock_guard<std::mutex> lock(m_Lock);
+                        boardPointInfo[i][j].name = target;
+                        boardPointInfo[i][j].score = minValue;
+                    }
                     int selfColor = 0;
-                    bool valid = IsValidCharInFen((target.size() == 1 ? target[0] : 'e'), i, j, m, selfColor);
+                    bool valid;
+                    {
+                        std::lock_guard<std::mutex> lock(m_Lock);
+                        valid = IsValidCharInFen((target.size() == 1 ? target[0] : 'e'), i, j, m, selfColor);
+                    }
                     if (!valid)
                     {
+                        std::cout << "error: " << i << ", " << j << "   " << (target.size() == 1 ? target[0] : 'e')
+                            << " " << target  << " " << m[(target.size() == 1 ? target[0] : 'e')] << std::endl;
                         fenSegment = "";
                         return;
                     }
@@ -310,77 +318,24 @@ namespace axq
         std::string fen3;
         std::thread t3{recognize, 7, 10, std::ref(fen3)};
         // Since JJ Xiangqi has animation in the middle chessboard, snipping a new photo after 1s
-        clock_t middleTime = clock();
+        /*clock_t middleTime = clock();
         int diff = middleTime - beginTime;
         if (diff < 1500)
             Sleep(1500 - diff);
-        std::cout << "diff: " << diff << std::endl;
+        std::cout << "diff: " << diff << std::endl;*/
         BoardScreenShot(img);
         std::string fen2;
         recognize(3, 7, fen2);
         t1.join();
         t3.join();
-        if (fen1.empty() || fen2.empty() || fen3.empty())
-            return "";
-        fen = fen1 + fen2 + fen3;
-/*
-        for (int i = 0; i < 10; ++i)
+        if (fen1.empty() || fen2.empty() || fen3.empty() || m['k'] != 1 || m['K'] != 1)
         {
-            for (int j = 0; j < 9; ++j)
-            {
-                auto& b = boardCoordinate;
-                auto rect = cv::Rect(b[i][j].x - pieceRadius, b[i][j].y - pieceRadius, 2 * pieceRadius, 2 * pieceRadius);
-                cv::Mat onePiece = img(rect);
-                // Compare to all piece
-                int minValue = 0x0FFFFFFF;
-                std::string target;
-                // a method to accelerate
-                cv::Mat possiblePiece = pieceID[boardPointInfo[i][j].name];
-                int outScore = SimilarityScore(onePiece, possiblePiece);
-                int diff = outScore * 0.05;
-                if (outScore - diff < boardPointInfo[i][j].score && outScore + diff > boardPointInfo[i][j].score)
-                {
-                    minValue = outScore;
-                    target = boardPointInfo[i][j].name;
-                }
-                else
-                {
-                    for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
-                    {
-                        int score = SimilarityScore(onePiece, it->second);
-                        if (score < minValue)
-                        {
-                            minValue = score;
-                            target = it->first;
-                        }
-                    }
-                }
-                boardPointInfo[i][j].name = target;
-                boardPointInfo[i][j].score = minValue;
-                int selfColor = 0;
-                bool valid = IsValidCharInFen((target.size() == 1 ? target[0] : 'e'), i, j, m, selfColor);
-                if (!valid)
-                    return "";
-                if (selfColor != 0)
-                {
-                    if (color == -selfColor)
-                        return "";
-                    color = selfColor;
-                }
-
-                if (target.size() == 1)
-                    fen += target;
-                else
-                {
-                    if (fen.empty() || (fen.back() < '0' || fen.back() >= '9'))
-                        fen += "1";
-                    else
-                        fen.back() = fen.back() + 1;
-                }
-            }
-            fen += "/";
+            std::cout << "invalid fen is: " << (fen1 + fen2 + fen3) << std::endl;
+            std::cout << "fen1: " << fen1 << " fen2: " << fen2 << "fen3: " << fen3 << std::endl;
+            return "";
         }
-*/
+            
+        fen = fen1 + fen2 + fen3;
         fen.pop_back();
         clock_t endTime = clock();
         std::cout << "time cost: " << (endTime - beginTime) << std::endl;

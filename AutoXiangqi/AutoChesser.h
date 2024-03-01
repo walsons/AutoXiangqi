@@ -20,10 +20,10 @@ namespace axq
 	class AutoChesser
 	{
 	public:
-		AutoChesser(IPC& ipc, const std::string& settingFileName = "setting.txt");
+		AutoChesser(IPC& ipc, ChessEngine* chessEngine, const std::string& settingFileName = "setting.txt");
 
 		template <typename Engine>
-		AXQResult ConfigureEngine(Engine& engine, IPC& ipc);
+		AXQResult ConfigureEngine(ChessEngine& engine, IPC& ipc);
 
 		AXQResult ConfigureSetting();
 
@@ -34,6 +34,7 @@ namespace axq
 		AXQResult AnalyzeChessBoard();
 		AXQResult LocateGameTimer();
 		AXQResult LocateWindow();
+		int FenSymbol(const std::string& fen);
 
 		void CheckMyTurn(int interval, RunType runType);
 		void MovePiece(RunType runType);
@@ -59,10 +60,12 @@ namespace axq
 		std::unordered_map<std::string, std::string> m_Settings;
 		std::atomic<bool> m_MyTurn = false;
 		std::atomic<bool> m_KeepCheck = false;
+		std::string m_LastFen = "b - - 0 1";
+		ChessEngine* m_Engine;
 	};
 
 	template <>
-	inline AXQResult AutoChesser::ConfigureEngine<Pikafish>(Pikafish& engine, IPC& ipc)
+	inline AXQResult AutoChesser::ConfigureEngine<Pikafish>(ChessEngine& engine, IPC& ipc)
 	{
 		const int BuffSize = 4096;
 		char engineOutput[BuffSize + 1];
