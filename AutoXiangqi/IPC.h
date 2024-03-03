@@ -10,19 +10,27 @@ namespace axq
     class IPC
     {
     public:
-        AXQResult InitIPC();
-
+        static IPC& GetIPC();
+        
         AXQResult Read(char buff[], DWORD size, DWORD& readBytes);
 
         AXQResult Write(std::string cmd);
+
+        ~IPC();
+
+    private:
+        IPC();
+        AXQResult InitIPC();
 
     public:
         HANDLE ParentWriteNode = nullptr;
         HANDLE ParentReadNode = nullptr;
         HANDLE ChildReadNode = nullptr;
         HANDLE ChildWriteNode = nullptr;
+
     private:
         SECURITY_ATTRIBUTES sa;
     };
 }
+
 #endif

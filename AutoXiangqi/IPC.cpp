@@ -1,7 +1,62 @@
 #include "IPC.h"
 
+#include <iostream>
+
 namespace axq
 {
+    IPC& IPC::GetIPC()
+    {
+        static IPC ipc;
+        return ipc;
+    }
+
+    AXQResult IPC::Read(char buff[], DWORD size, DWORD& readBytes)
+    {
+        auto ret = ReadFile(ParentReadNode, buff, size, &readBytes, NULL);
+        return ret ? AXQResult::ok : AXQResult::fail;
+    }
+
+    AXQResult IPC::Write(std::string cmd)
+    {
+        cmd.push_back('\n');
+        DWORD writeBytes;
+        auto ret = WriteFile(ParentWriteNode, cmd.c_str(), cmd.size(), &writeBytes, NULL);
+        return ret ? AXQResult::ok : AXQResult::fail;
+    }
+
+    IPC::~IPC()
+    {
+        if (ParentWriteNode)
+        {
+            CloseHandle(ParentWriteNode);
+            ParentWriteNode = nullptr;
+        }
+        if (ParentReadNode)
+        {
+            CloseHandle(ParentReadNode);
+            ParentReadNode = nullptr;
+        }
+        if (ChildReadNode)
+        {
+            CloseHandle(ChildReadNode);
+            ChildReadNode = nullptr;
+        }
+        if (ChildWriteNode)
+        {
+            CloseHandle(ChildWriteNode);
+            ChildWriteNode = nullptr;
+        }
+    }
+
+    IPC::IPC()
+    {
+        auto ret = InitIPC();
+        if (ret != axq::AXQResult::ok)
+        {
+            std::cout << "Error: IPC::InitIPC()" << std::endl;
+        }
+    }
+
     AXQResult IPC::InitIPC()
     {
         sa.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -21,19 +76,5 @@ namespace axq
             return AXQResult::fail;
 
         return AXQResult::ok;
-    }
-
-    AXQResult IPC::Read(char buff[], DWORD size, DWORD& readBytes)
-    {
-        auto ret = ReadFile(ParentReadNode, buff, size, &readBytes, NULL);
-        return ret ? AXQResult::ok : AXQResult::fail;
-    }
-
-    AXQResult IPC::Write(std::string cmd)
-    {
-        cmd.push_back('\n');
-        DWORD writeBytes;
-        auto ret = WriteFile(ParentWriteNode, cmd.c_str(), cmd.size(), &writeBytes, NULL);
-        return ret ? AXQResult::ok : AXQResult::fail;
     }
 }

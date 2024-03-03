@@ -11,14 +11,14 @@ namespace axq
     class ChessEngine
     {
     public:
-        ChessEngine(std::string engineName, std::string installPath, IPC& ipc);
+        ChessEngine(std::string engineName, std::string installPath);
         virtual void InitEngine() = 0;
         virtual AXQResult Run() = 0;
 
     public:
-        IPC& m_IPC;
         PROCESS_INFORMATION pi;
         STARTUPINFO si;
+
     protected:
         std::string m_EngineName;
         std::string m_InstallPath;
@@ -27,7 +27,7 @@ namespace axq
     class Pikafish : public ChessEngine
     {
     public:
-        Pikafish(std::string engineName, std::string installPath, IPC& ipc);
+        Pikafish(std::string engineName, std::string installPath);
         void InitEngine();
         AXQResult Run();
     };

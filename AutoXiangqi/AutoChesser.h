@@ -20,14 +20,14 @@ namespace axq
 	class AutoChesser
 	{
 	public:
-		AutoChesser(IPC& ipc, ChessEngine* chessEngine, const std::string& settingFileName = "setting.txt");
+		AutoChesser(ChessEngine* chessEngine, const std::string& settingFileName = "setting.txt");
 
 		template <typename Engine>
-		AXQResult ConfigureEngine(ChessEngine& engine, IPC& ipc);
+		AXQResult ConfigureEngine(ChessEngine& engine);
 
 		AXQResult ConfigureSetting();
 
-		AXQResult Run(IPC& ipc, RunType runType);
+		AXQResult Run(RunType runType);
 
 	private:
 		AXQResult SetGameWindowPos();
@@ -45,7 +45,6 @@ namespace axq
 		void ImitateHumanMove(POINT destination, int sleepTime = 10, long stepSize = 5);
 
 	public:
-		IPC& m_IPC;
 		FenGenerator m_FenGen;
 		HWND gameWindow = nullptr;
 		HWND bashWindow = nullptr;
@@ -65,13 +64,14 @@ namespace axq
 	};
 
 	template <>
-	inline AXQResult AutoChesser::ConfigureEngine<Pikafish>(ChessEngine& engine, IPC& ipc)
+	inline AXQResult AutoChesser::ConfigureEngine<Pikafish>(ChessEngine& engine)
 	{
 		const int BuffSize = 4096;
 		char engineOutput[BuffSize + 1];
 		DWORD readBytes = 0;
 		DWORD writeBytes = 0;
 
+		auto& ipc = IPC::GetIPC();
 		ipc.Read(engineOutput, BuffSize, readBytes);
 		engineOutput[readBytes] = '\0';
 		std::cout << "Engine Info: " << engineOutput << std::endl;

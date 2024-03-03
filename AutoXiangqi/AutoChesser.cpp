@@ -3,8 +3,8 @@
 
 namespace axq
 {
-	AutoChesser::AutoChesser(IPC& ipc, ChessEngine* chessEngine, const std::string& settingFileName)
-		: m_IPC(ipc), m_Engine(chessEngine), m_SettingFileName(settingFileName)
+	AutoChesser::AutoChesser(ChessEngine* chessEngine, const std::string& settingFileName)
+		: m_Engine(chessEngine), m_SettingFileName(settingFileName)
 	{
 	}
 
@@ -356,7 +356,7 @@ namespace axq
 				delete m_Engine;
 				m_Engine = nullptr;
 			}
-			m_Engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe", m_IPC);
+			m_Engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
 			m_Engine->InitEngine();
 			auto ret = m_Engine->Run();
 			if (ret != axq::AXQResult::ok)
@@ -364,23 +364,24 @@ namespace axq
 				std::cout << "start engine failed" << std::endl;
 				return;
 			}
-			ConfigureEngine<axq::Pikafish>(*m_Engine, m_IPC);
+			ConfigureEngine<axq::Pikafish>(*m_Engine);
 			if (ret != axq::AXQResult::ok)
 			{
 				std::cout << "start engine failed" << std::endl;
 				return;
 			}
 		}
+		auto& ipc = IPC::GetIPC();
 		m_LastFen = fen;
-		m_IPC.Write("position fen " + fen);
+		ipc.Write("position fen " + fen);
 		std::cout << ("position fen " + fen) << std::endl;
-		m_IPC.Write("go depth 15");
+		ipc.Write("go depth 15");
 		std::string bestMove;
 		std::string output;
 		while (true)
 		{
 			DWORD readBytes = 0;
-			m_IPC.Read(engineOutput, BuffSize, readBytes);
+			ipc.Read(engineOutput, BuffSize, readBytes);
 			engineOutput[readBytes] = '\0';
 			output += engineOutput;
 			auto pos = output.find("bestmove");
@@ -445,8 +446,9 @@ namespace axq
 		Sleep(2500);
 	}
 
-	AXQResult AutoChesser::Run(IPC& ipc, RunType runType)
+	AXQResult AutoChesser::Run(RunType runType)
 	{
+		auto& ipc = IPC::GetIPC();
 		std::string cmd;
 		// Run type
 		std::cout << "There are three type to run, input the index to choose, default is 1" << std::endl;
