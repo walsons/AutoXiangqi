@@ -286,11 +286,73 @@ namespace axq
         return false;
     }
 
+    bool FenGenerator::IsNewGame(cv::Mat img)
+    {
+        BoardScreenShot(img);
+        std::string selfSection;
+        auto recognize = [&](int x, int y) -> char {
+            int minValue = 0x0FFFFFFF;
+            std::string target;
+            auto& b = boardCoordinate;
+            auto rect = cv::Rect(b[x][y].x - pieceRadius, b[x][y].y - pieceRadius, 2 * pieceRadius, 2 * pieceRadius);
+            cv::Mat onePiece = img(rect);
+            for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
+            {
+                // Ignore the empty grid
+                if ((it->first).size() != 1)
+                    continue;
+                int score = SimilarityScore(onePiece, it->second);
+                if (score < minValue)
+                {
+                    minValue = score;
+                    target = it->first;
+                }
+            }
+            return target[0];
+        };
+        static const std::vector<POINT> selfCoordinate{
+            {6, 0}, { 6, 2 }, { 6, 4 }, { 6, 6 }, { 6, 8 },
+            {7, 1}, {7, 7},
+            // row 8 is empty
+            {9, 0}, {9, 1}, { 9, 2 }, { 9, 3 }, { 9, 4 }, { 9, 5 }, { 9, 6 }, { 9, 7 }, { 9, 8 }
+        };
+        for (const auto& pos : selfCoordinate)
+        {
+            selfSection += recognize(pos.x, pos.y);
+        }
+        /***** If game start, update the empty grid, there are five cases *****/
+        // self is red;
+        static const std::string start1 = "PPPPPCCRNBAKABNR";
+        // self is black;
+        static const std::string start2 = "pppppccrnbakabnr";
+        // self is black, but enemy's cannon move to our piece place 
+        static const std::string start3 = "pppppccrCbakabnr";
+        static const std::string start4 = "pppppccrnbakabCr";
+        if (selfSection == start1 ||
+            selfSection == start2 ||
+            selfSection == start3 ||
+            selfSection == start4)
+        {
+            std::cout << "Check a new game start" << std::endl;
+            return true;
+        }
+        return false;
+    }
+
     std::string FenGenerator::GenerateFen()
     {
         clock_t beginTime = clock();
         cv::Mat img;
         BoardScreenShot(img);
+        /*if (m_FenGen.IsNewGame())
+        {
+            m_IPC.Write("ucinewgame");
+            m_FenGen.MakeNewBlankPieceFingerPrint();
+        }*/
+        if (IsNewGame(img))
+        {
+            MakeNewBlankPieceFingerPrint();
+        }
         std::string fen;
         std::unordered_map<char, short> m;
         std::atomic<int> color = 0;
@@ -307,65 +369,86 @@ namespace axq
                     // Compare to all piece
                     int minValue = 0x0FFFFFFF;
                     std::string target;
-                    // a method to accelerate
-                    cv::Mat possiblePiece = pieceID[boardPointInfo[i][j].name];
-                    int outScore = SimilarityScore(onePiece, possiblePiece);
-                    if (outScore - 5 <= boardPointInfo[i][j].score && outScore + 5 >= boardPointInfo[i][j].score)
+                    // remove white dot influence
+                    int whitePixel = 0;
+                    for (int i = 0; i < onePiece.rows; ++i)
                     {
-                        minValue = outScore;
-                        target = boardPointInfo[i][j].name;
+                        for (int j = 0; j < onePiece.cols; ++j)
+                        {
+                            if (onePiece.at<uchar>(i, j) > 245)
+                                whitePixel += 1;
+                        }
+                    }
+                    if (whitePixel > 36)
+                    {
+                        minValue = 0;
+                        target = "blank1";
                     }
                     else
                     {
-                        for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
+                        // a method to accelerate
+                        cv::Mat possiblePiece = pieceID[boardPointInfo[i][j].name];
+                        int outScore = SimilarityScore(onePiece, possiblePiece);
+                        if (outScore - 5 <= boardPointInfo[i][j].score && outScore + 5 >= boardPointInfo[i][j].score)
                         {
-                            int score = SimilarityScore(onePiece, it->second);
-                            if (score < minValue)
+                            minValue = outScore;
+                            target = boardPointInfo[i][j].name;
+                        }
+                        else
+                        {
+                            for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
                             {
-                                minValue = score;
-                                target = it->first;
+                                int score = SimilarityScore(onePiece, it->second);
+                                if (score < minValue)
+                                {
+                                    minValue = score;
+                                    target = it->first;
+                                }
                             }
                         }
-                    }
-                    {
-                        std::lock_guard<std::mutex> lock(m_Lock);
-                        boardPointInfo[i][j].name = target;
-                        boardPointInfo[i][j].score = minValue;
-                    }
-                    int selfColor = 0;
-                    bool valid;
-                    {
-                        std::lock_guard<std::mutex> lock(m_Lock);
-                        char c = (target.size() == 1 ? target[0] : 'e');
-                        valid = IsValidCharInFen(c, i, j, m, selfColor);
-                        mDebugCor[c].push_back({ i, j });
-                        mDebugScore[c].push_back(minValue);
-                    }
-                    if (!valid)
-                    {
-                        char c = (target.size() == 1 ? target[0] : 'e');
-                        std::cout << "recognize error: " << c << std::endl;
-                        for (auto& c : mDebugCor[c])
                         {
-                            std::cout << c.x << "," << c.y << " / ";
+                            std::lock_guard<std::mutex> lock(m_Lock);
+                            boardPointInfo[i][j].name = target;
+                            boardPointInfo[i][j].score = minValue;
                         }
-                        std::cout << std::endl;
-                        for (auto& c : mDebugScore[c])
+                        int selfColor = 0;
+                        bool valid;
                         {
-                            std::cout << c << " / ";
+                            std::lock_guard<std::mutex> lock(m_Lock);
+                            char c = (target.size() == 1 ? target[0] : 'e');
+                            valid = IsValidCharInFen(c, i, j, m, selfColor);
+                            mDebugCor[c].push_back({ i, j });
+                            mDebugScore[c].push_back(minValue);
                         }
-                        std::cout << std::endl;
-                        fenSegment = "";
-                        return;
-                    }
-                    if (selfColor != 0)
-                    {
-                        if (color == -selfColor)
+                        if (!valid)
                         {
+                            char c = (target.size() == 1 ? target[0] : 'e');
+                            std::cout << "recognize error: " << c << std::endl;
+                            std::cout << "coordinate: ";
+                            for (auto& c : mDebugCor[c])
+                            {
+                                std::cout << c.x << "," << c.y << "  |  ";
+                            }
+                            std::cout << std::endl;
+                            std::cout << "score: ";
+                            for (auto& c : mDebugScore[c])
+                            {
+                                std::cout << c << "  |  ";
+                            }
+                            std::cout << std::endl;
                             fenSegment = "";
                             return;
                         }
-                        color = selfColor;
+                        if (selfColor != 0)
+                        {
+                            if (color == -selfColor)
+                            {
+                                std::cout << fenSegment << " ---color error--- " << selfColor << " " << color << std::endl;
+                                fenSegment = "";
+                                return;
+                            }
+                            color = selfColor;
+                        }
                     }
                     if (target.size() == 1)
                         fenSegment += target;
@@ -384,12 +467,6 @@ namespace axq
         std::thread t1{recognize, 0, 3, std::ref(fen1)};
         std::string fen3;
         std::thread t3{recognize, 7, 10, std::ref(fen3)};
-        // Since JJ Xiangqi has animation in the middle chessboard, snipping a new photo after 1s
-        /*clock_t middleTime = clock();
-        int diff = middleTime - beginTime;
-        if (diff < 1500)
-            Sleep(1500 - diff);
-        std::cout << "diff: " << diff << std::endl;*/
         BoardScreenShot(img);
         std::string fen2;
         recognize(3, 7, fen2);

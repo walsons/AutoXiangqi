@@ -317,6 +317,7 @@ namespace axq
 			m_MyTurn = m_FenGen.IsMyTurn();
 			if (m_MyTurn)
 			{
+				Sleep(1000);
 				MovePiece(runType);
 			}
 			else
@@ -328,9 +329,9 @@ namespace axq
 	{
 		// Scan board to fen
 		std::string fen = m_FenGen.GenerateFen();
+		// Invalid fen
 		if (fen.empty())
 		{
-			std::cout << "invalid fen" << std::endl;
 			return;
 		}
 		int symbol1 = FenSymbol(fen);
@@ -478,7 +479,7 @@ namespace axq
 			else if (cmd == "a")
 			{
 				m_KeepCheck = true;
-				fu = std::async(&AutoChesser::CheckMyTurn, this, 500, runType);
+				fu = std::async(&AutoChesser::CheckMyTurn, this, 1000, runType);
 			}
 			else if (cmd == "q")
 			{

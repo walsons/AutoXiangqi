@@ -1,0 +1,4 @@
+boardTop=58
+boardLeft=46
+boardBottom=935
+boardRight=867
