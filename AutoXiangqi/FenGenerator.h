@@ -9,7 +9,7 @@ namespace axq
 	struct BoardPointInfo
 	{
 		std::string name = "r";
-		int score = 0x0FFFFFFF;
+		cv::Mat img;
 	};
 
 	class FenGenerator

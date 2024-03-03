@@ -167,7 +167,7 @@ namespace axq
         /***** Finger print for red *****/
         // r: ³µ [9][0]
         rect = cv::Rect(b[9][0].x - r, b[9][0].y - r, 2 * r, 2 * r);
-        pieceID["R"] = src(rect);;
+        pieceID["R"] = src(rect);
         // n: Âí [9][1]
         rect = cv::Rect(b[9][1].x - r, b[9][1].y - r, 2 * r, 2 * r);
         pieceID["N"] = src(rect);
@@ -210,27 +210,27 @@ namespace axq
         rect = cv::Rect(b[3][0].x - r, b[3][0].y - r, 2 * r, 2 * r);
         pieceID["p"] = src(rect);
 
-        /***** Finger print for blank *****/
+        /***** Finger print for empty grid *****/
         rect = cv::Rect(b[4][3].x - r, b[4][3].y - r, 2 * r, 2 * r);
-        pieceID["blank1"] = src(rect);
+        pieceID["e1"] = src(rect);
         rect = cv::Rect(b[4][5].x - r, b[4][5].y - r, 2 * r, 2 * r);
-        pieceID["blank2"] = src(rect);
+        pieceID["e2"] = src(rect);
         rect = cv::Rect(b[5][0].x - r, b[5][0].y - r, 2 * r, 2 * r);
-        pieceID["blank3"] = src(rect);
+        pieceID["e3"] = src(rect);
         rect = cv::Rect(b[5][2].x - r, b[5][2].y - r, 2 * r, 2 * r);
-        pieceID["blank4"] = src(rect);
+        pieceID["e4"] = src(rect);
         rect = cv::Rect(b[5][4].x - r, b[5][4].y - r, 2 * r, 2 * r);
-        pieceID["blank5"] = src(rect);
+        pieceID["e5"] = src(rect);
         rect = cv::Rect(b[5][6].x - r, b[5][6].y - r, 2 * r, 2 * r);
-        pieceID["blank6"] = src(rect);
+        pieceID["e6"] = src(rect);
         rect = cv::Rect(b[5][8].x - r, b[5][8].y - r, 2 * r, 2 * r);
-        pieceID["blank7"] = src(rect);
+        pieceID["e7"] = src(rect);
         rect = cv::Rect(b[8][4].x - r, b[8][4].y - r, 2 * r, 2 * r);
-        pieceID["blank8"] = src(rect);
+        pieceID["e8"] = src(rect);
         rect = cv::Rect(b[8][2].x - r, b[8][2].y - r, 2 * r, 2 * r);
-        pieceID["blank9"] = src(rect);
+        pieceID["e9"] = src(rect);
         rect = cv::Rect(b[8][6].x - r, b[8][6].y - r, 2 * r, 2 * r);
-        pieceID["blank10"] = src(rect);
+        pieceID["e10"] = src(rect);
 	}
 
     void FenGenerator::MakeNewBlankPieceFingerPrint()
@@ -242,27 +242,27 @@ namespace axq
         auto& r = pieceRadius;
         cv::Rect rect(0, 0, 0, 0);
 
-        /***** Finger print for blank *****/
+        /***** Finger print for empty grid *****/
         rect = cv::Rect(b[4][3].x - r, b[4][3].y - r, 2 * r, 2 * r);
-        pieceID["blank1"] = src(rect);
+        pieceID["e1"] = src(rect);
         rect = cv::Rect(b[4][5].x - r, b[4][5].y - r, 2 * r, 2 * r);
-        pieceID["blank2"] = src(rect);
+        pieceID["e2"] = src(rect);
         rect = cv::Rect(b[5][0].x - r, b[5][0].y - r, 2 * r, 2 * r);
-        pieceID["blank3"] = src(rect);
+        pieceID["e3"] = src(rect);
         rect = cv::Rect(b[5][2].x - r, b[5][2].y - r, 2 * r, 2 * r);
-        pieceID["blank4"] = src(rect);
+        pieceID["e4"] = src(rect);
         rect = cv::Rect(b[5][4].x - r, b[5][4].y - r, 2 * r, 2 * r);
-        pieceID["blank5"] = src(rect);
+        pieceID["e5"] = src(rect);
         rect = cv::Rect(b[5][6].x - r, b[5][6].y - r, 2 * r, 2 * r);
-        pieceID["blank6"] = src(rect);
+        pieceID["e6"] = src(rect);
         rect = cv::Rect(b[5][8].x - r, b[5][8].y - r, 2 * r, 2 * r);
-        pieceID["blank7"] = src(rect);
+        pieceID["e7"] = src(rect);
         rect = cv::Rect(b[8][4].x - r, b[8][4].y - r, 2 * r, 2 * r);
-        pieceID["blank8"] = src(rect);
+        pieceID["e8"] = src(rect);
         rect = cv::Rect(b[8][2].x - r, b[8][2].y - r, 2 * r, 2 * r);
-        pieceID["blank9"] = src(rect);
+        pieceID["e9"] = src(rect);
         rect = cv::Rect(b[8][6].x - r, b[8][6].y - r, 2 * r, 2 * r);
-        pieceID["blank10"] = src(rect);
+        pieceID["e10"] = src(rect);
     }
 
     bool FenGenerator::IsMyTurn()
@@ -288,7 +288,7 @@ namespace axq
 
     bool FenGenerator::IsNewGame(cv::Mat img)
     {
-        BoardScreenShot(img);
+        //BoardScreenShot(img);
         std::string selfSection;
         auto recognize = [&](int x, int y) -> char {
             int minValue = 0x0FFFFFFF;
@@ -299,7 +299,7 @@ namespace axq
             for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
             {
                 // Ignore the empty grid
-                if ((it->first).size() != 1)
+                if ((it->first)[0] == 'e')
                     continue;
                 int score = SimilarityScore(onePiece, it->second);
                 if (score < minValue)
@@ -379,22 +379,41 @@ namespace axq
                                 whitePixel += 1;
                         }
                     }
-                    if (whitePixel > 36)
+
+                    if (whitePixel > 60)
                     {
-                        minValue = 0;
-                        target = "blank1";
+                        //std::cout << "whitePixel: " << whitePixel << std::endl;
+                        target = "e1";
                     }
                     else
                     {
-                        // a method to accelerate
-                        cv::Mat possiblePiece = pieceID[boardPointInfo[i][j].name];
-                        int outScore = SimilarityScore(onePiece, possiblePiece);
-                        if (outScore - 5 <= boardPointInfo[i][j].score && outScore + 5 >= boardPointInfo[i][j].score)
-                        {
-                            minValue = outScore;
-                            target = boardPointInfo[i][j].name;
-                        }
-                        else
+                        // a method to accelerate, check if pixel change  
+                        cv::Mat possiblePiece = boardPointInfo[i][j].img;
+                        bool pixelChange = false;
+                        auto checkPixelChange = [&]() -> bool {
+                            if (possiblePiece.size() == onePiece.size())
+                            {
+                                //unsigned long long diff = 0;
+                                for (int i = 0; i < possiblePiece.rows; ++i)
+                                {
+                                    for (int j = 0; j < possiblePiece.cols; ++j)
+                                    {
+                                        //diff += abs(possiblePiece.at<uchar>(i, j) - onePiece.at<uchar>(i, j));
+                                        if (possiblePiece.at<uchar>(i, j) != onePiece.at<uchar>(i, j))
+                                        {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                //std::cout << "i:" << i << " j:" << j << "  diff: " << diff << std::endl;
+                                //if (diff != 0)
+                                //    return true;
+                                target = boardPointInfo[i][j].name;
+                                return false;
+                            }
+                            return true;
+                        };
+                        if (checkPixelChange())
                         {
                             for (auto it = pieceID.begin(); it != pieceID.end(); ++it)
                             {
@@ -409,20 +428,20 @@ namespace axq
                         {
                             std::lock_guard<std::mutex> lock(m_Lock);
                             boardPointInfo[i][j].name = target;
-                            boardPointInfo[i][j].score = minValue;
+                            boardPointInfo[i][j].img = onePiece;
                         }
                         int selfColor = 0;
                         bool valid;
                         {
                             std::lock_guard<std::mutex> lock(m_Lock);
-                            char c = (target.size() == 1 ? target[0] : 'e');
+                            char c = target[0];
                             valid = IsValidCharInFen(c, i, j, m, selfColor);
                             mDebugCor[c].push_back({ i, j });
                             mDebugScore[c].push_back(minValue);
                         }
                         if (!valid)
                         {
-                            char c = (target.size() == 1 ? target[0] : 'e');
+                            char c = target[0];
                             std::cout << "recognize error: " << c << std::endl;
                             std::cout << "coordinate: ";
                             for (auto& c : mDebugCor[c])
@@ -447,11 +466,12 @@ namespace axq
                                 fenSegment = "";
                                 return;
                             }
+                            //std::cout << "color: " << color << "     selfColor: " << selfColor << std::endl;
                             color = selfColor;
                         }
                     }
-                    if (target.size() == 1)
-                        fenSegment += target;
+                    if (target[0] != 'e')
+                        fenSegment += target[0];
                     else
                     {
                         if (fenSegment.empty() || (fenSegment.back() < '0' || fenSegment.back() >= '9'))

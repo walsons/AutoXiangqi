@@ -339,7 +339,7 @@ namespace axq
 		if (symbol1 != symbol2)
 		{
 			Sleep(1800);
-			std::cout << "symbol1: " << symbol1 << ",   " << "symbol2: " << symbol2 << std::endl;
+			//std::cout << "symbol1: " << symbol1 << ",   " << "symbol2: " << symbol2 << std::endl;
 			fen = m_FenGen.GenerateFen();
 			if (fen.empty())
 			{

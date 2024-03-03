@@ -44,7 +44,7 @@ int main()
 	ret = autoChesser.ConfigureSetting();
 	if (ret != axq::AXQResult::ok)
 		return ErrorExit("autoChesser.ConfigureSetting()");
-	autoChesser.activeBash = true;
+	// autoChesser.activeBash = true;
 	autoChesser.Run(ipc, axq::RunType::MOVE_PIECE_BY_MESSAGE);
 
 	CloseHandles(engine->pi.hProcess, engine->pi.hThread, ipc.ParentWriteNode, ipc.ParentReadNode, ipc.ChildReadNode, ipc.ChildWriteNode);
