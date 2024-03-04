@@ -446,8 +446,76 @@ namespace axq
 		Sleep(2500);
 	}
 
+	void GetGameWindowClassName(std::string& className)
+	{
+	    POINT pos;
+	    HWND hwnd = WindowFromPoint(pos);
+	    if (hwnd)
+	    {
+	        int maxCount = 1024;
+	        wchar_t* str = new wchar_t[maxCount];
+	        GetClassName(hwnd, str, maxCount);
+	        className = str;
+	        delete[] str;
+	    }
+	}
+
 	AXQResult AutoChesser::Run(RunType runType)
 	{
+		std::cout << "1. Get game window class name:" << std::endl;
+		std::cout << "\tPut the mouse cursor in the game window and and input cn(class name)" << std::endl;
+		std::cout << "2. Locate chess board:" << std::endl;
+		std::cout << "\tPut the mouse cursor in the board top left and input btl(board top left)" << std::endl;
+		std::cout << "\tPut the mouse cursor in the board bottom right and input bbr(board bottom right)" << std::endl;
+		std::cout << "3. Locate timer:" << std::endl;
+		std::cout << "\tPut the mouse cursor in the timer top left and input ttl(timer top left)" << std::endl;
+		std::cout << "\tPut the mouse cursor in the timer bottom right and input tbr(timer bottom right)" << std::endl;
+		std::cout << "4. Generate chess piece ID:" << std::endl;
+		std::cout << "\tinput pid(piece ID)" << std::endl;
+
+		// Read settings
+		m_RW.open(m_SettingFileName, std::ios::in);
+		if (m_RW.good())
+		{
+			std::string line;
+			while (std::getline(m_RW, line))
+			{
+				size_t pos = line.find("=");
+				std::string key = line.substr(0, pos);
+				std::string value = line.substr(pos + 1);
+				m_Settings.insert({ key, value });
+			}
+		}
+		else
+		{
+			std::cout << "setting file doesn't exist, create a new setting file" << std::endl;
+			m_RW.open(m_SettingFileName, std::ios::out);
+			m_RW.close();
+		}
+
+		std::string cmd;
+		while (std::cin >> cmd)
+		{
+			if (cmd == "cn")
+			{	
+			}
+			else if (cmd = "btl")
+			{
+			}
+			else if (cmd == "bbr")
+			{
+			}
+			else if (cmd = "ttl")
+			{
+			}
+			else if (cmd == "tbr")
+			{
+			}
+			else if (cmd == "pid")
+			{
+			}
+		}
+		
 		auto& ipc = IPC::GetIPC();
 		std::string cmd;
 		// Run type
