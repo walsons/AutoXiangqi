@@ -144,6 +144,7 @@
     <ClCompile Include="FenGenerator.cpp" />
     <ClCompile Include="IPC.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Tools.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AutoChesser.h" />

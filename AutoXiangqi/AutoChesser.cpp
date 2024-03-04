@@ -1,4 +1,6 @@
 #include "AutoChesser.h"
+#include "Tools.h"
+
 #include <future>
 
 namespace axq
@@ -446,20 +448,6 @@ namespace axq
 		Sleep(2500);
 	}
 
-	void GetGameWindowClassName(std::string& className)
-	{
-	    POINT pos;
-	    HWND hwnd = WindowFromPoint(pos);
-	    if (hwnd)
-	    {
-	        int maxCount = 1024;
-	        wchar_t* str = new wchar_t[maxCount];
-	        GetClassName(hwnd, str, maxCount);
-	        className = str;
-	        delete[] str;
-	    }
-	}
-
 	AXQResult AutoChesser::Run(RunType runType)
 	{
 		std::cout << "1. Get game window class name:" << std::endl;
@@ -470,11 +458,13 @@ namespace axq
 		std::cout << "3. Locate timer:" << std::endl;
 		std::cout << "\tPut the mouse cursor in the timer top left and input ttl(timer top left)" << std::endl;
 		std::cout << "\tPut the mouse cursor in the timer bottom right and input tbr(timer bottom right)" << std::endl;
-		std::cout << "4. Generate chess piece ID:" << std::endl;
-		std::cout << "\tinput pid(piece ID)" << std::endl;
+		std::cout << "4. Record piece appearance:" << std::endl;
+		std::cout << "\tinput rpa(record piece appearance)" << std::endl;
+		std::cout << "5. Exit application:" << std::endl;
+		std::cout << "\tinput exit" << std::endl;
 
 		// Read settings
-		m_RW.open(m_SettingFileName, std::ios::in);
+		m_RW.open(m_ConfigFileName, std::ios::in);
 		if (m_RW.good())
 		{
 			std::string line;
@@ -483,13 +473,13 @@ namespace axq
 				size_t pos = line.find("=");
 				std::string key = line.substr(0, pos);
 				std::string value = line.substr(pos + 1);
-				m_Settings.insert({ key, value });
+				m_Config.insert({ key, value });
 			}
 		}
 		else
 		{
-			std::cout << "setting file doesn't exist, create a new setting file" << std::endl;
-			m_RW.open(m_SettingFileName, std::ios::out);
+			std::cout << "Setting file doesn't exist, create a new setting file" << std::endl;
+			m_RW.open(m_ConfigFileName, std::ios::out);
 			m_RW.close();
 		}
 
@@ -498,26 +488,36 @@ namespace axq
 		{
 			if (cmd == "cn")
 			{	
+				GetGameWindowClassName();
 			}
-			else if (cmd = "btl")
+			else if (cmd == "btl")
 			{
+				LocateChessBoard(true);
 			}
 			else if (cmd == "bbr")
 			{
+				LocateChessBoard(false);
 			}
-			else if (cmd = "ttl")
+			else if (cmd == "ttl")
 			{
+				LocateGameTimer(true);
 			}
 			else if (cmd == "tbr")
 			{
+				LocateGameTimer(false);
 			}
-			else if (cmd == "pid")
+			else if (cmd == "rpa")
 			{
+				RecordPieceAppearance();
+			}
+			else if (cmd == "exit")
+			{
+				break;
 			}
 		}
 		
 		auto& ipc = IPC::GetIPC();
-		std::string cmd;
+		// std::string cmd;
 		// Run type
 		std::cout << "There are three type to run, input the index to choose, default is 1" << std::endl;
 		std::cout << "\t1. Move piece by message:" << std::endl;
@@ -564,6 +564,63 @@ namespace axq
 				m_FenGen.MakeNewBlankPieceFingerPrint();
 			}
 		}
+		return AXQResult::ok;
+	}
+
+	AXQResult AutoChesser::GetGameWindowClassName()
+	{
+		POINT pos;
+		GetCursorPos(&pos);
+		HWND hwnd = WindowFromPoint(pos);
+		if (hwnd)
+		{
+			int maxCount = 1024;
+			wchar_t* str = new wchar_t[maxCount];
+			GetClassName(hwnd, str, maxCount);
+			delete[] str;
+			m_Config["GameWindowClassName"] = wstring2string(str);
+			return AXQResult::ok;
+		}
+		return AXQResult::fail;
+	}
+
+	AXQResult AutoChesser::LocateChessBoard(bool topLeft)
+	{
+		POINT pos;
+		if (topLeft)
+		{
+			GetCursorPos(&pos);
+			m_Config["ChessBoardTopLeft"] = std::to_string(pos.x) + "," + std::to_string(pos.y);
+		}
+		else
+		{
+			GetCursorPos(&pos);
+			m_Config["ChessBoardBottomRight"] = std::to_string(pos.x) + "," + std::to_string(pos.y);
+		}
+		return AXQResult::ok;
+	}
+
+	AXQResult AutoChesser::LocateGameTimer(bool topLeft)
+	{
+		POINT pos;
+		if (topLeft)
+		{
+			GetCursorPos(&pos);
+			m_Config["GameTimerTopLeft"] = std::to_string(pos.x) + "," + std::to_string(pos.y);
+		}
+		else
+		{
+			GetCursorPos(&pos);
+			m_Config["GameTimerBottomRight"] = std::to_string(pos.x) + "," + std::to_string(pos.y);
+		}
+		return AXQResult::ok;
+	}
+
+	AXQResult AutoChesser::RecordPieceAppearance()
+	{
+		cv::Mat chessBoardPhoto;
+		m_FenGen.BoardScreenShot(chessBoardPhoto);
+		cv::imwrite("chessBoardPhoto.png", chessBoardPhoto);
 		return AXQResult::ok;
 	}
 

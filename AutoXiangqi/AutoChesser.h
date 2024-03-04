@@ -30,6 +30,11 @@ namespace axq
 		AXQResult Run(RunType runType);
 
 	private:
+		AXQResult GetGameWindowClassName();
+		AXQResult LocateChessBoard(bool topLeft);
+		AXQResult LocateGameTimer(bool topLeft);
+		AXQResult RecordPieceAppearance();
+
 		AXQResult SetGameWindowPos();
 		AXQResult AnalyzeChessBoard();
 		AXQResult LocateGameTimer();
@@ -52,6 +57,9 @@ namespace axq
 		RECT windowRect = { 0, 0, 0, 0 };
 
 	private:
+		std::unordered_map<std::string, std::string> m_Config;
+		std::string m_ConfigFileName;
+
 		char engineOutput[BuffSize + 1];
 		std::fstream m_RW;
 		bool m_ReadSetting = false;
