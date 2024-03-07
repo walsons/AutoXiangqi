@@ -7,6 +7,7 @@
 #include "FenGenerator.h"
 #include <iostream>
 #include <fstream>
+#include <future>
 
 namespace axq
 {
@@ -30,10 +31,17 @@ namespace axq
 		AXQResult Run(RunType runType);
 
 	private:
+        AXQResult UpdateConfigMember();
 		AXQResult GetGameWindowClassName();
 		AXQResult LocateChessBoard(bool topLeft);
 		AXQResult LocateGameTimer(bool topLeft);
 		AXQResult RecordPieceAppearance();
+		AXQResult RecordTimerAppearance();
+        AXQResult SetGameWindowPosition();
+		AXQResult SaveConfig();
+        AXQResult AutoPlayChess();
+		AXQResult InvokeConfig();
+
 
 		AXQResult SetGameWindowPos();
 		AXQResult AnalyzeChessBoard();
@@ -58,7 +66,16 @@ namespace axq
 
 	private:
 		std::unordered_map<std::string, std::string> m_Config;
-		std::string m_ConfigFileName;
+        std::string m_ConfigFileName = "Config.txt";
+        std::string m_GameWindowClassName;
+        HWND m_GameWindow = nullptr;
+        POINT m_ChessBoardTopLeft;
+        POINT m_ChessBoardBottomRight;
+        POINT m_GameTimerTopLeft;
+        POINT m_GameTimerBottomRight;
+        std::string m_ChessBoardPhotoFileName = "ChessBoardPhoto.png";
+        std::string m_GameTimerPhotoFileName = "GameTimerPhoto.png";
+        std::future<void> m_AutoPlayChessThread;
 
 		char engineOutput[BuffSize + 1];
 		std::fstream m_RW;

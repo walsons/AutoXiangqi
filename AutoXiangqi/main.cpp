@@ -25,24 +25,25 @@ void CloseHandles(Handles... handles)
 
 int main()
 {
-	axq::ChessEngine* engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
+	/*axq::ChessEngine* engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
 	engine->InitEngine();
 	auto ret = engine->Run();
 	if (ret != axq::AXQResult::ok)
-		return ErrorExit("engine.run()");
+		return ErrorExit("engine.run()");*/
 
-	axq::AutoChesser autoChesser(engine);
+	/*axq::AutoChesser autoChesser(engine);
 	ret = autoChesser.ConfigureEngine<axq::Pikafish>(*engine);
 	if (ret != axq::AXQResult::ok)
 		return ErrorExit("autoChesser.ConfigureEngine<axq::Pikafish>(engine, ipc)");
 	ret = autoChesser.ConfigureSetting();
 	if (ret != axq::AXQResult::ok)
-		return ErrorExit("autoChesser.ConfigureSetting()");
+		return ErrorExit("autoChesser.ConfigureSetting()");*/
 	// autoChesser.activeBash = true;
+    axq::AutoChesser autoChesser(nullptr);
 	autoChesser.Run(axq::RunType::MOVE_PIECE_BY_MESSAGE);
 
-	auto ipc = axq::IPC::GetIPC();
-	CloseHandles(engine->pi.hProcess, engine->pi.hThread);
+	//auto ipc = axq::IPC::GetIPC();
+	//CloseHandles(engine->pi.hProcess, engine->pi.hThread);
 	//system("pause");
 	return 0;
 }

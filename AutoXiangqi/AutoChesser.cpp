@@ -450,18 +450,30 @@ namespace axq
 
 	AXQResult AutoChesser::Run(RunType runType)
 	{
+        // Config
 		std::cout << "1. Get game window class name:" << std::endl;
-		std::cout << "\tPut the mouse cursor in the game window and and input cn(class name)" << std::endl;
+		std::cout << "\tPut the mouse cursor in the game window and and input \"cn\"(class name)" << std::endl;
 		std::cout << "2. Locate chess board:" << std::endl;
-		std::cout << "\tPut the mouse cursor in the board top left and input btl(board top left)" << std::endl;
-		std::cout << "\tPut the mouse cursor in the board bottom right and input bbr(board bottom right)" << std::endl;
+		std::cout << "\tPut the mouse cursor in the board top left and input \"btl\"(board top left)" << std::endl;
+		std::cout << "\tPut the mouse cursor in the board bottom right and input \"bbr\"(board bottom right)" << std::endl;
 		std::cout << "3. Locate timer:" << std::endl;
-		std::cout << "\tPut the mouse cursor in the timer top left and input ttl(timer top left)" << std::endl;
-		std::cout << "\tPut the mouse cursor in the timer bottom right and input tbr(timer bottom right)" << std::endl;
+		std::cout << "\tPut the mouse cursor in the timer top left and input \"ttl\"(timer top left)" << std::endl;
+		std::cout << "\tPut the mouse cursor in the timer bottom right and input \"tbr\"(timer bottom right)" << std::endl;
 		std::cout << "4. Record piece appearance:" << std::endl;
-		std::cout << "\tinput rpa(record piece appearance)" << std::endl;
-		std::cout << "5. Exit application:" << std::endl;
-		std::cout << "\tinput exit" << std::endl;
+		std::cout << "\tInput \"rp\"(record piece)" << std::endl;
+		std::cout << "5. Record timer appearance:" << std::endl;
+		std::cout << "\tInput \"rt\"(record timer)" << std::endl;
+		std::cout << "6. Save Config:" << std::endl;
+		std::cout << "\tInput \"save\"" << std::endl;
+        // Other setting
+        std::cout << "7. Set the game window in the top right of the desktop" << std::endl;
+        std::cout << "\tPut the mouse in the game window title bar and input \"pos\"(position)" << std::endl;
+        // Exit
+		std::cout << "Exit application:" << std::endl;
+		std::cout << "\tInput exit" << std::endl;
+        std::cout << std::endl;
+        // Main command
+        std::cout << "Input \"a\"(auto) to move chess automatically without command, input \"q\" to quit" << std::endl;
 
 		// Read settings
 		m_RW.open(m_ConfigFileName, std::ios::in);
@@ -480,8 +492,9 @@ namespace axq
 		{
 			std::cout << "Setting file doesn't exist, create a new setting file" << std::endl;
 			m_RW.open(m_ConfigFileName, std::ios::out);
-			m_RW.close();
 		}
+		m_RW.close();
+        UpdateConfigMember();
 
 		std::string cmd;
 		while (std::cin >> cmd)
@@ -489,31 +502,56 @@ namespace axq
 			if (cmd == "cn")
 			{	
 				GetGameWindowClassName();
+                UpdateConfigMember();
 			}
 			else if (cmd == "btl")
 			{
 				LocateChessBoard(true);
+                UpdateConfigMember();
 			}
 			else if (cmd == "bbr")
 			{
 				LocateChessBoard(false);
+                UpdateConfigMember();
 			}
 			else if (cmd == "ttl")
 			{
 				LocateGameTimer(true);
+                UpdateConfigMember();
 			}
 			else if (cmd == "tbr")
 			{
 				LocateGameTimer(false);
+                UpdateConfigMember();
 			}
-			else if (cmd == "rpa")
+			else if (cmd == "rp")
 			{
 				RecordPieceAppearance();
 			}
+			else if (cmd == "rt")
+			{
+				RecordTimerAppearance();
+			}
+			else if (cmd == "save")
+			{
+				SaveConfig();
+			}
+            else if (cmd == "pos")
+            {
+                SetGameWindowPosition();
+            }
 			else if (cmd == "exit")
 			{
 				break;
 			}
+            else if (cmd == "a")
+            {
+                AutoPlayChess();
+            }
+            else if (cmd == "q")
+            {
+                m_KeepCheck = false;
+            }
 		}
 		
 		auto& ipc = IPC::GetIPC();
@@ -567,6 +605,36 @@ namespace axq
 		return AXQResult::ok;
 	}
 
+    AXQResult AutoChesser::UpdateConfigMember()
+    {
+        auto parsePoint = [](const std::string& point) {
+            auto pos = point.find(",");
+            if (pos != std::string::npos)
+            {
+                int x = std::stoi(point.substr(0, pos));
+                int y = std::stoi(point.substr(pos + 1));
+                return POINT{ x, y };
+            }
+            std::cout << "Error: Parse point failed" << std::endl;
+            return POINT{ 0, 0 };
+        };
+
+        if (m_Config.find("GameWindowClassName") != m_Config.end())
+            m_GameWindowClassName = m_Config["GameWindowClassName"];
+        if (m_Config.find("ChessBoardTopLeft") != m_Config.end())
+            m_ChessBoardTopLeft = parsePoint(m_Config["ChessBoardTopLeft"]);
+        if (m_Config.find("ChessBoardBottomRight") != m_Config.end())
+            m_ChessBoardBottomRight = parsePoint(m_Config["ChessBoardBottomRight"]);
+        if (m_Config.find("GameTimerTopLeft") != m_Config.end())
+            m_GameTimerTopLeft = parsePoint(m_Config["GameTimerTopLeft"]);
+        if (m_Config.find("GameTimerBottomRight") != m_Config.end())
+            m_GameTimerBottomRight = parsePoint(m_Config["GameTimerBottomRight"]);
+
+		InvokeConfig();
+
+        return AXQResult::ok;
+    }
+
 	AXQResult AutoChesser::GetGameWindowClassName()
 	{
 		POINT pos;
@@ -577,8 +645,9 @@ namespace axq
 			int maxCount = 1024;
 			wchar_t* str = new wchar_t[maxCount];
 			GetClassName(hwnd, str, maxCount);
-			delete[] str;
+			std::wcout << str << std::endl;
 			m_Config["GameWindowClassName"] = wstring2string(str);
+			delete[] str;
 			return AXQResult::ok;
 		}
 		return AXQResult::fail;
@@ -619,13 +688,176 @@ namespace axq
 	AXQResult AutoChesser::RecordPieceAppearance()
 	{
 		cv::Mat chessBoardPhoto;
-		m_FenGen.BoardScreenShot(chessBoardPhoto);
-		cv::imwrite("chessBoardPhoto.png", chessBoardPhoto);
+		m_FenGen.SnippingChessBoard(chessBoardPhoto, nullptr);
+		cv::imwrite(m_ChessBoardPhotoFileName, chessBoardPhoto);
 		return AXQResult::ok;
+	}
+
+	AXQResult AutoChesser::RecordTimerAppearance()
+	{
+		cv::Mat gameTimerPhoto;
+		m_FenGen.GameTimerShot(gameTimerPhoto);
+		cv::imwrite(m_GameTimerPhotoFileName, gameTimerPhoto);
+		return AXQResult::ok;
+	}
+
+    AXQResult AutoChesser::SetGameWindowPosition()
+    {
+        POINT curPoint;
+        GetCursorPos(&curPoint);
+        HWND window = WindowFromPoint(curPoint);
+        AXQResult ret = AXQResult::fail;
+        if (window != nullptr)
+        {
+            if (SetWindowPos(window, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE))
+                ret = AXQResult::ok;
+        }
+        return ret;
+    }
+
+	AXQResult AutoChesser::SaveConfig()
+	{
+		// Write settings
+		m_RW.open(m_ConfigFileName, std::ios::out);
+		if (m_RW.is_open())
+		{
+			for (auto& item : m_Config)
+			{
+				m_RW << item.first << "=" << item.second << std::endl;
+			}
+		}
+		else
+		{
+			std::cout << "Save config failed" << std::endl;
+		}
+		m_RW.close();
+		return AXQResult::ok;
+	}
+
+    AXQResult AutoChesser::AutoPlayChess()
+    {
+		if (m_Engine == nullptr)
+		{
+			m_Engine = new Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
+			m_Engine->InitEngine();
+			auto ret = m_Engine->Run();
+			if (ret != AXQResult::ok)
+				return ret;
+		}
+
+        m_KeepCheck = true;
+        m_AutoPlayChessThread = std::async(&AutoChesser::CheckMyTurn, this, 1000, RunType::MOVE_PIECE_BY_MESSAGE);
+
+        return AXQResult::ok;
+    }
+
+	AXQResult AutoChesser::InvokeConfig()
+	{
+		m_FenGen.m_ScreenShotTopLeft = m_ChessBoardTopLeft;
+		m_FenGen.m_ScreenShotBottomRight = m_ChessBoardBottomRight;
+
+		m_FenGen.m_GameTimerTopLeft = m_GameTimerTopLeft;
+		m_FenGen.m_GameTimerBottomRight = m_GameTimerBottomRight;
+
+		cv::Mat chessBoardShot = cv::imread(m_ChessBoardPhotoFileName, cv::IMREAD_GRAYSCALE);
+		if (chessBoardShot.data == nullptr)
+			return AXQResult::fail;
+		m_FenGen.MakePieceFingerPrint(chessBoardShot);
+
+		LPCWSTR className = string2wstring(m_GameWindowClassName).c_str();
+		auto win = FindWindow(className, nullptr);
+		// Currently only this method work, will find another way to find the window
+		m_GameWindow = WindowFromPoint({ (m_ChessBoardTopLeft.x + m_ChessBoardBottomRight.x) / 2, (m_ChessBoardTopLeft.y + m_ChessBoardBottomRight.y) / 2 });
+
+		return AXQResult::ok;
+	}
+
+	AXQResult EnemyMove(const std::string& lastFen, const std::string& lastMove, const std::string& curFen)
+	{
+		
+		/*std::string last;
+		for (auto c : lastFen)
+		{
+			if (c >= '0' && c <= '9')
+			{
+				last += std::string((c - '0'), 'e');
+			}
+			else if (c == '/')
+			{
+				continue;
+			}
+			last.push_back(c);
+		}*/
+		auto lastFenCopy = lastFen;
+		char lastBoard[10][9];
+		int index = 0;
+		for (int i = 0; i < 10; ++i)
+		{
+			for (int j = 0; j < 9; ++j)
+			{
+				if (lastFenCopy[index] > '0' && lastFenCopy[index] <= '9')
+				{
+					lastBoard[i][j] = '0';
+					lastFenCopy[index] -= 1;
+				}
+				else if (lastFenCopy[index] == '0' || lastFenCopy[index] == '/')
+				{
+					lastBoard[i][j] = lastFenCopy[++index];
+				}
+				else
+				{
+					lastBoard[i][j] = lastFenCopy[index++];
+				}
+			}
+		}
+		auto curFenCopy = curFen;
+		char curBoard[10][9];
+		index = 0;
+		for (int i = 0; i < 10; ++i)
+		{
+			for (int j = 0; j < 9; ++j)
+			{
+				if (curFenCopy[index] > '0' && curFenCopy[index] <= '9')
+				{
+					curBoard[i][j] = '0';
+					curFenCopy[index] -= 1;
+				}
+				else if (curFenCopy[index] == '0' || curFenCopy[index] == '/')
+				{
+					curBoard[i][j] = curFenCopy[++index];
+				}
+				else
+				{
+					curBoard[i][j] = curFenCopy[index++];
+				}
+			}
+		}
+		POINT from = { 0, 0 }, to{ 0, 0 };
+		if (curFen[curFen.size() - std::string("b - - 0 1").size()] == 'b')
+		{
+			// Self is black / enemy is red
+			for (int i = 0; i < 10; ++i)
+			{
+				for (int j = 0; j < 9; ++j)
+				{
+					if ((lastBoard[i][j] >= 'A' && lastBoard[i][j] <= 'Z') && curBoard[i][j] == '0')
+						from = { i, j };
+					else if ((lastBoard[i][j] < 'a' || lastBoard[i][j] > 'z') && (curBoard[i][j] >= 'a' && curBoard[i][j] <= 'z'))
+						to = { i, j };
+				}
+			}
+		}
+		else
+		{
+			// Self is red
+
+		}
+
 	}
 
 	void AutoChesser::MovePieceByMessage(POINT from, POINT to)
 	{
+		auto gameWindow = WindowFromPoint({ (m_ChessBoardTopLeft.x + m_ChessBoardBottomRight.x) / 2, (m_ChessBoardTopLeft.y + m_ChessBoardBottomRight.y) / 2 });
 		RECT rect;
 		GetWindowRect(gameWindow, &rect);
 		SendMessage(gameWindow, WM_LBUTTONDOWN, 0, from.x - rect.left + ((from.y - rect.top) << 16));

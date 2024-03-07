@@ -17,6 +17,7 @@ namespace axq
 	public:
 		FenGenerator() = default;
 		double GetWindowDpi();
+        void SnippingChessBoard(cv::Mat& chessBoardShot, HWND gameWindow);
 		void BoardScreenShot(cv::Mat& boardScreenShot);
 		void GameTimerShot(cv::Mat& gameTimerShot);
 		void MakePieceFingerPrint(cv::Mat boardScreenShot);

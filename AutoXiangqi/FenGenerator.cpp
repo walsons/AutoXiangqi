@@ -1,4 +1,5 @@
 #include "FenGenerator.h"
+#include "IPC.h"
 #include <Windows.h>
 #include <wingdi.h>
 #include <fstream>
@@ -116,6 +117,40 @@ namespace axq
 		}
 		return dpi;
 	}
+
+    void FenGenerator::SnippingChessBoard(cv::Mat& chessBoardShot, HWND gameWindow)
+    {
+        // Screen shot
+        HDC hScreenDC = GetDC(gameWindow);
+        HDC hMemoryDC = CreateCompatibleDC(hScreenDC);
+        int dpi = GetWindowDpi();
+        int width = GetDeviceCaps(hScreenDC, HORZRES) * dpi;
+        int height = GetDeviceCaps(hScreenDC, VERTRES) * dpi;
+        HBITMAP hBitmap = CreateCompatibleBitmap(hScreenDC, width, height);
+        HGDIOBJ oldObject = SelectObject(hMemoryDC, hBitmap);
+        int shotWidth = (m_ScreenShotBottomRight.x - m_ScreenShotTopLeft.x) * dpi;
+        int shotHeight = (m_ScreenShotBottomRight.y - m_ScreenShotTopLeft.y) * dpi;
+        BitBlt(hMemoryDC, 0, 0, shotWidth, shotHeight, hScreenDC, dpi * m_ScreenShotTopLeft.x, dpi * m_ScreenShotTopLeft.y, SRCCOPY);
+        BITMAPINFOHEADER bi;
+        bi.biSize = sizeof(BITMAPINFOHEADER);
+        bi.biWidth = width;
+        bi.biHeight = -height;
+        bi.biPlanes = 1;
+        bi.biBitCount = 24;
+        bi.biCompression = BI_RGB;
+        bi.biSizeImage = 0;
+        std::vector<uchar> buf(width * height * 3);
+        GetDIBits(hMemoryDC, hBitmap, 0, height,
+            buf.data(), (BITMAPINFO*)&bi,
+            DIB_RGB_COLORS);
+        // Transform to Mat
+        cv::Mat screenShot(height, width, CV_8UC3, buf.data());
+        // Truncate and change to gray
+        cv::Rect boardRect = { 0, 0, shotWidth, shotHeight };
+        cv::Mat grayImage;
+        cv::cvtColor(screenShot(boardRect), grayImage, cv::COLOR_BGR2GRAY);
+        chessBoardShot = grayImage.clone();
+    }
 
 	void FenGenerator::BoardScreenShot(cv::Mat& boardScreenShot)
 	{
@@ -269,8 +304,12 @@ namespace axq
     {
         cv::Mat img;
         GameTimerShot(img);
-        cv::Mat origin = cv::imread("gameTimer.png", 0);
+        cv::Mat origin = cv::imread("GameTimerPhoto.png", 0);
         int outScore = SimilarityScore(img, origin);
+        /*cv::imshow("ll", img);
+        cv::waitKey();
+        cv::imshow("Pp", origin);
+        cv::waitKey();*/
         assert(img.rows == origin.rows);
         assert(img.cols == origin.cols);
         int score = 0;
@@ -344,13 +383,9 @@ namespace axq
         clock_t beginTime = clock();
         cv::Mat img;
         BoardScreenShot(img);
-        /*if (m_FenGen.IsNewGame())
-        {
-            m_IPC.Write("ucinewgame");
-            m_FenGen.MakeNewBlankPieceFingerPrint();
-        }*/
         if (IsNewGame(img))
         {
+            IPC::GetIPC().Write("ucinewgame");
             MakeNewBlankPieceFingerPrint();
         }
         std::string fen;
@@ -553,17 +588,59 @@ namespace axq
         int minRadius = 30;   // min radius
         int maxRadius = 35;   // max radius
         cv::HoughCircles(boardScreenShot, circles, cv::HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, maxRadius);
+        /*for (size_t i = 0; i < circles.size(); i++)
+        {
+            cv::circle(boardScreenShot, cv::Point(circles[i][0], circles[i][1]), circles[i][2], cv::Scalar(0, 0, 255), 2);
+        }
+        cv::imwrite("circle.png", boardScreenShot);*/
+        // Sort circles by y
+        std::sort(circles.begin(), circles.end(), [](const cv::Vec3f& c1, const cv::Vec3f& c2) {
+            return c1[1] < c2[1];
+        });
+        // find a series of circle which y is similar
+        std::vector<std::vector<cv::Vec3f>> vec;
+        std::vector<cv::Vec3f> innerVec;
+        cv::Vec3f init = { 0, 0, 1 }, end = {static_cast<float>(boardScreenShot.cols), static_cast<float>(boardScreenShot.rows), 1};
+        circles.push_back(end);
         for (size_t i = 0; i < circles.size(); i++)
         {
-            boardTop = boardTop < circles[i][1] ? boardTop : circles[i][1];
-            boardLeft = boardLeft < circles[i][0] ? boardLeft : circles[i][0];
-            boardBottom = boardBottom > circles[i][1] ? boardBottom : circles[i][1];
-            boardRight = boardRight > circles[i][0] ? boardRight : circles[i][0];
-            pieceRadius += circles[i][2];
+            if (abs(circles[i][1] - init[1]) < circles[i][2] * 0.1 && abs(circles[i][2] - init[2]) < circles[i][2] * 0.1)
+            {
+                innerVec.push_back(init);
+            }
+            else
+            {
+                innerVec.push_back(init);
+                vec.push_back(innerVec);
+                innerVec.clear();
+            }
+            init = circles[i];
         }
+        decltype(vec) vecFilter;
+        for (int i = 0; i < vec.size(); ++i)
+        {
+            // A little of error is allowed
+            if (vec[i].size() >= 8)
+                vecFilter.push_back(vec[i]);
+        }
+        std::sort(vecFilter.front().begin(), vecFilter.front().end(), [](const cv::Vec3f& c1, const cv::Vec3f& c2) {
+            return c1[0] < c2[0];
+        });
+        std::sort(vecFilter.back().begin(), vecFilter.back().end(), [](const cv::Vec3f& c1, const cv::Vec3f& c2) {
+            return c1[0] < c2[0];
+        });
+        boardLeft = vecFilter.back().front()[0];
+        boardRight = vecFilter.back().back()[0];
+        boardBottom = (vecFilter.back().front()[1] + vecFilter.back().back()[1]) / 2;
+        boardTop = (vecFilter.front().front()[1] + vecFilter.front().back()[1]) / 2;
         std::cout << boardTop << " " << boardLeft << " " << boardBottom << " " << boardRight << std::endl;
-        pieceRadius /= circles.size();
-
+        for (auto it = vecFilter.front().begin(); it != vecFilter.front().end(); ++it)
+        {
+            pieceRadius += (*it)[2];
+        }
+        pieceRadius /= vecFilter.front().size();
+        std::cout << pieceRadius << std::endl;
+        
         int hStep = (boardRight - boardLeft) / 8;
         int vStep = (boardBottom - boardTop) / 9;
         for (int i = 0; i < 10; ++i)

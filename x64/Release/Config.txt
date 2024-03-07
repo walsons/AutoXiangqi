@@ -1,0 +1,5 @@
+GameWindowClassName=ConsoleWindowClass
+ChessBoardTopLeft=7,204
+ChessBoardBottomRight=466,696
+GameTimerTopLeft=214,789
+GameTimerBottomRight=252,831
