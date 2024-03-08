@@ -53,5 +53,8 @@
     <ClInclude Include="FenGenerator.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Fen.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

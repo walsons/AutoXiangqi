@@ -150,6 +150,7 @@
     <ClInclude Include="AutoChesser.h" />
     <ClInclude Include="AXQDefine.h" />
     <ClInclude Include="ChessEngine.h" />
+    <ClInclude Include="Fen.h" />
     <ClInclude Include="FenGenerator.h" />
     <ClInclude Include="IPC.h" />
     <ClInclude Include="Tools.h" />
