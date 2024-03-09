@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 #include <string>
+#include <vector>
 
 class Fen
 {
@@ -27,9 +28,24 @@ public:
             for (int j = 0; j < 9; ++j)
             {
                 b[i][j] = boardString[index++];
+                real[i][j] = b[i][j];
             }
         }
         color = fenString[fenString.size() - std::string("w - - 0 1").size()];
+    }
+
+    Fen(const Fen& fen)
+    {
+        m_Moves = fen.m_Moves;
+        color = fen.color;
+        for (int i = 0; i < 10; ++i)
+        {
+            for (int j = 0; j < 9; ++j)
+            {
+                b[i][j] = fen.b[i][j];
+                real[i][j] = fen.real[i][j];
+            }
+        }
     }
 
     std::string Get() const
@@ -41,6 +57,38 @@ public:
             {
                 if (b[i][j] != '0')
                     fenSegment += b[i][j];
+                else
+                {
+                    if (fenSegment.empty() || (fenSegment.back() < '0' || fenSegment.back() >= '9'))
+                        fenSegment += "1";
+                    else
+                        fenSegment.back() = fenSegment.back() + 1;
+                }
+            }
+            fenSegment += "/";
+        }
+        fenSegment.pop_back();
+        fenSegment += std::string(" ") + color + " - - 0 1";
+        if (!m_Moves.empty())
+        {
+            fenSegment += " moves";
+            for (auto step : m_Moves)
+            {
+                fenSegment += (" " + step);
+            }
+        }
+        return fenSegment;
+    }
+
+    std::string GetReal() const
+    {
+        std::string fenSegment;
+        for (int i = 0; i < 10; ++i)
+        {
+            for (int j = 0; j < 9; ++j)
+            {
+                if (real[i][j] != '0')
+                    fenSegment += real[i][j];
                 else
                 {
                     if (fenSegment.empty() || (fenSegment.back() < '0' || fenSegment.back() >= '9'))
@@ -67,9 +115,9 @@ public:
         {
             for (int j = 0; j < 9; ++j)
             {
-                if ((fen.b[i][j] != '0') && b[i][j] == '0')
+                if ((fen.real[i][j] != '0') && real[i][j] == '0')
                     from = { i, j };
-                else if (fen.b[i][j] != b[i][j])
+                else if (fen.real[i][j] != real[i][j])
                     to = { i, j };
             }
         }
@@ -84,7 +132,65 @@ public:
 
     bool operator==(const Fen& fen)
     {
-        return Get() == fen.Get();
+        return GetReal() == fen.GetReal();
+    }
+
+    int FenSymbol(const std::string& fen)
+    {
+        auto pos = fen.find_first_of(' ');
+        auto fenSegment = fen.substr(0, pos);
+        int symbol = 0;
+        for (auto c : fenSegment)
+        {
+            switch (c)
+            {
+            case 'r':
+                symbol += (1 << 13);
+                break;
+            case 'n':
+                symbol += (1 << 12);
+                break;
+            case 'b':
+                symbol += (1 << 11);
+                break;
+            case 'a':
+                symbol += (1 << 10);
+                break;
+            case 'k':
+                symbol += (1 << 9);
+                break;
+            case 'c':
+                symbol += (1 << 8);
+                break;
+            case 'p':
+                symbol += (1 << 7);
+                break;
+            case 'R':
+                symbol += (1 << 6);
+                break;
+            case 'N':
+                symbol += (1 << 5);
+                break;
+            case 'B':
+                symbol += (1 << 4);
+                break;
+            case 'A':
+                symbol += (1 << 3);
+                break;
+            case 'K':
+                symbol += (1 << 2);
+                break;
+            case 'C':
+                symbol += (1 << 1);
+                break;
+            case 'P':
+                symbol += (1 << 0);
+                break;
+            default:
+                break;
+            }
+        }
+        return symbol;
     }
 
     Fen& push(const std::string& move)
@@ -94,14 +200,31 @@ public:
         from.y = 9 - (move[1] - '0');
         to.x = move[2] - 'a';
         to.y = 9 - (move[3] - '0');
-        b[to.y][to.x] = b[from.y][from.x];
-        b[from.y][from.x] = '0';
-        color = (color == 'w' ? 'b' : 'w');
+        real[to.y][to.x] = real[from.y][from.x];
+        real[from.y][from.x] = '0';
+        //color = (color == 'w' ? 'b' : 'w');
+        if (FenSymbol(GetReal()) == FenSymbol(Get()))
+        {
+            m_Moves.push_back(move);
+        }
+        else
+        {
+            for (int i = 0; i < 10; ++i)
+            {
+                for (int j = 0; j < 9; ++j)
+                {
+                    b[i][j] = real[i][j];
+                }
+            }
+            m_Moves.clear();
+        }
         return *this;
     }
 private:
     // '0' delegate empty blank grid for convenience
     char b[10][9];
+    std::vector<std::string> m_Moves;
+    char real[10][9];
     char color;
 };
 
