@@ -12,6 +12,8 @@ namespace axq
     public:
         static IPC& GetIPC();
         
+        bool Peek(char buff[], DWORD size, DWORD& readBytes);
+
         AXQResult Read(char buff[], DWORD size, DWORD& readBytes);
 
         AXQResult Write(std::string cmd);

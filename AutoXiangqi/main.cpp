@@ -25,6 +25,13 @@ void CloseHandles(Handles... handles)
 
 int main()
 {
+	/*Fen f("3akab2/9/8b/p1N2c3/9/2P1n4/P3p1P1P/B4C2N/4A4/3AK1B2 b - - 0 1 moves i3i4 d9e8 i2h4");
+	f.push("h7h8");
+	Fen f2("4kab2/4a4/8b/p1N2c3/9/2P1n2NP/P3p1P2/B4C3/4A4/3AK1B2 b - - 0 1");
+	Fen t("3akab2/9/8b/p1N2c3/9/2P1n4/P3p1P1P/B4C2N/4A4/3AK1B2 b - - 0 1");
+	std::cout << t.push("i3i4").push("d9e8").GetReal() << std::endl;
+	std::cout << t.GetReal() << std::endl;*/
+
 	/*axq::ChessEngine* engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
 	engine->InitEngine();
 	auto ret = engine->Run();

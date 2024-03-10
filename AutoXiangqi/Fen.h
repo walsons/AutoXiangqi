@@ -8,7 +8,7 @@
 class Fen
 {
 public:
-    Fen(const std::string& fenString)
+    Fen(const std::string& fenString = "4r4/9/9/9/9/9/9/9/9/9 w - - 0 1")
     {
         std::string boardString;
         for (auto c : fenString)
@@ -68,7 +68,10 @@ public:
             fenSegment += "/";
         }
         fenSegment.pop_back();
-        fenSegment += std::string(" ") + color + " - - 0 1";
+        auto fenColor = color;
+        if (m_Moves.size() % 2)
+            fenColor = (fenColor == 'w' ? 'b' : 'w');
+        fenSegment += std::string(" ") + fenColor + " - - 0 1";
         if (!m_Moves.empty())
         {
             fenSegment += " moves";
@@ -116,17 +119,21 @@ public:
             for (int j = 0; j < 9; ++j)
             {
                 if ((fen.real[i][j] != '0') && real[i][j] == '0')
+                {
                     from = { i, j };
+                }
                 else if (fen.real[i][j] != real[i][j])
+                {
                     to = { i, j };
+                }
             }
         }
 
         std::string move;
-        move.push_back(from.x + 'a');
-        move.push_back((9 - from.y) + '0');
-        move.push_back(to.x + 'a');
-        move.push_back((9 - to.y) + '0');
+        move.push_back(from.y + 'a');
+        move.push_back((9 - from.x) + '0');
+        move.push_back(to.y + 'a');
+        move.push_back((9 - to.x) + '0');
         return move;
     }
 

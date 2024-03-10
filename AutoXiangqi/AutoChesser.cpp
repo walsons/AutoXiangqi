@@ -334,10 +334,12 @@ namespace axq
 		// Invalid fen
 		if (fen.empty())
 		{
+			m_FenGen.m_InputFen = Fen();
 			return;
 		}
 		int symbol1 = FenSymbol(fen);
-		int symbol2 = FenSymbol(m_LastFen);
+		int symbol2 = FenSymbol(m_FenGen.m_InputFen.GetReal());
+		std::cout << "symbol1: " << symbol1 << ",   " << "symbol2: " << symbol2 << std::endl;
 		if (symbol1 != symbol2)
 		{
 			Sleep(1800);
@@ -345,51 +347,69 @@ namespace axq
 			fen = m_FenGen.GenerateFen();
 			if (fen.empty())
 			{
+				m_FenGen.m_InputFen = Fen();
 				return;
 			}
+			m_FenGen.m_InputFen = Fen(fen);
 		}
-		// Check engine is still alive
-		DWORD engineResult = 0;
-		GetExitCodeProcess(m_Engine->pi.hProcess, &engineResult);
-		if (engineResult != STILL_ACTIVE)
+		else
 		{
-			if (m_Engine != nullptr)
-			{
-				delete m_Engine;
-				m_Engine = nullptr;
-			}
-			m_Engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
-			m_Engine->InitEngine();
-			auto ret = m_Engine->Run();
-			if (ret != axq::AXQResult::ok)
-			{
-				std::cout << "start engine failed" << std::endl;
-				return;
-			}
-			ConfigureEngine<axq::Pikafish>(*m_Engine);
-			if (ret != axq::AXQResult::ok)
-			{
-				std::cout << "start engine failed" << std::endl;
-				return;
-			}
+			auto enemyMove = Fen(fen) - m_FenGen.m_InputFen;
+			m_FenGen.m_InputFen.push(enemyMove);
 		}
+		
 		auto& ipc = IPC::GetIPC();
-		m_LastFen = fen;
-		ipc.Write("position fen " + fen);
-		std::cout << ("position fen " + fen) << std::endl;
+		ipc.Write("position fen " + m_FenGen.m_InputFen.Get());
+		std::cout << (m_FenGen.m_InputFen.Get()) << std::endl;
+		std::cout << (m_FenGen.m_InputFen.GetReal()) << std::endl;
 		ipc.Write("go depth 15");
+
+
 		std::string bestMove;
 		std::string output;
 		while (true)
 		{
+			// Check engine is still alive
+			DWORD engineResult = 0;
+			GetExitCodeProcess(m_Engine->pi.hProcess, &engineResult);
+			if (engineResult != STILL_ACTIVE)
+			{
+				if (m_Engine != nullptr)
+				{
+					delete m_Engine;
+					m_Engine = nullptr;
+				}
+				m_Engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
+				m_Engine->InitEngine();
+				auto ret = m_Engine->Run();
+				if (ret != axq::AXQResult::ok)
+				{
+					std::cout << "start engine failed" << std::endl;
+					return;
+				}
+				ConfigureEngine<axq::Pikafish>(*m_Engine);
+				if (ret != axq::AXQResult::ok)
+				{
+					std::cout << "start engine failed" << std::endl;
+					return;
+				}
+				std::cout << "Engine restart" << std::endl;
+				m_FenGen.m_InputFen = Fen();
+				return;
+			}
+
 			DWORD readBytes = 0;
-			ipc.Read(engineOutput, BuffSize, readBytes);
+			if (ipc.Peek(engineOutput, BuffSize, readBytes))
+			{
+				ipc.Read(engineOutput, BuffSize, readBytes);
+			}
 			engineOutput[readBytes] = '\0';
 			output += engineOutput;
 			auto pos = output.find("bestmove");
 			if (pos != std::string::npos && (pos + std::string("bestmove xxxx").size() <= output.size()))
 			{
 				bestMove = output.substr(pos + std::string("bestmove ").size(), std::string("xxxx").size());
+				m_FenGen.m_InputFen.push(bestMove);
 				break;
 			}
 		}
@@ -744,6 +764,8 @@ namespace axq
 			if (ret != AXQResult::ok)
 				return ret;
 		}
+
+		m_FenGen.m_InputFen = Fen();
 
         m_KeepCheck = true;
         m_AutoPlayChessThread = std::async(&AutoChesser::CheckMyTurn, this, 1000, RunType::MOVE_PIECE_BY_MESSAGE);

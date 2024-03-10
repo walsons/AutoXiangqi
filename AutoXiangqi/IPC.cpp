@@ -10,6 +10,15 @@ namespace axq
         return ipc;
     }
 
+    bool IPC::Peek(char buff[], DWORD size, DWORD& readBytes)
+    {
+        DWORD avail = 0, left = 0;
+        auto ret = PeekNamedPipe(ParentReadNode, buff, size, &readBytes, &avail, &left);
+        if (avail > 0)
+            return true;
+        return false;
+    }
+
     AXQResult IPC::Read(char buff[], DWORD size, DWORD& readBytes)
     {
         auto ret = ReadFile(ParentReadNode, buff, size, &readBytes, NULL);

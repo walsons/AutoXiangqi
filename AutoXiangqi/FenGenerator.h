@@ -1,6 +1,8 @@
 #ifndef FEN_GENERATOR_H
 #define FEN_GENERATOR_H
 
+#include "Fen.h"
+
 #include <opencv2/opencv.hpp>
 #include <Windows.h>
 
@@ -47,6 +49,7 @@ namespace axq
 		long boardBottom = 0;
 		long boardRight = 0;
 		long pieceRadius = 0;
+		Fen m_InputFen = Fen();
 
 	private:
 		BoardPointInfo boardPointInfo[10][9];

@@ -5,6 +5,7 @@
 #include "ChessEngine.h"
 #include "IPC.h"
 #include "FenGenerator.h"
+
 #include <iostream>
 #include <fstream>
 #include <future>
@@ -85,7 +86,6 @@ namespace axq
 		std::atomic<bool> m_MyTurn = false;
 		std::atomic<bool> m_KeepCheck = false;
 		std::string m_LastFen = "b - - 0 1";
-		std::string m_InputFen = "4r4/9/9/9/9/9/9/9/9/3R5 w - - 0 1";
 		ChessEngine* m_Engine;
 	};
 

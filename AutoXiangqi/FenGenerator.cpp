@@ -246,6 +246,9 @@ namespace axq
         pieceID["p"] = src(rect);
 
         /***** Finger print for empty grid *****/
+        auto previous = cv::imread("PreviousPhotoForEmptyGrid.png", 0);
+        if (previous.data != nullptr)
+            src = previous;
         rect = cv::Rect(b[4][3].x - r, b[4][3].y - r, 2 * r, 2 * r);
         pieceID["e1"] = src(rect);
         rect = cv::Rect(b[4][5].x - r, b[4][5].y - r, 2 * r, 2 * r);
@@ -272,6 +275,7 @@ namespace axq
     {
         cv::Mat boardScreenShot;
         BoardScreenShot(boardScreenShot);
+        cv::imwrite("PreviousPhotoForEmptyGrid.png", boardScreenShot);
         auto& src = boardScreenShot;
         auto& b = boardCoordinate;
         auto& r = pieceRadius;
@@ -386,6 +390,7 @@ namespace axq
         if (IsNewGame(img))
         {
             IPC::GetIPC().Write("ucinewgame");
+            m_InputFen = Fen();
             MakeNewBlankPieceFingerPrint();
         }
         std::string fen;
@@ -414,7 +419,6 @@ namespace axq
                                 whitePixel += 1;
                         }
                     }
-
                     if (whitePixel > 60)
                     {
                         //std::cout << "whitePixel: " << whitePixel << std::endl;
@@ -461,7 +465,7 @@ namespace axq
                             }
                         }
                         {
-                            std::lock_guard<std::mutex> lock(m_Lock);
+                            //std::lock_guard<std::mutex> lock(m_Lock);
                             boardPointInfo[i][j].name = target;
                             boardPointInfo[i][j].img = onePiece;
                         }
@@ -522,7 +526,7 @@ namespace axq
         std::thread t1{recognize, 0, 3, std::ref(fen1)};
         std::string fen3;
         std::thread t3{recognize, 7, 10, std::ref(fen3)};
-        BoardScreenShot(img);
+        //BoardScreenShot(img);
         std::string fen2;
         recognize(3, 7, fen2);
         t1.join();
@@ -698,7 +702,7 @@ namespace axq
     int FenGenerator::SimilarityScore(cv::Mat img1, cv::Mat img2)
     {
         cv::Mat ig1 = img1(cv::Range(img1.rows / 4, img1.rows * 3 / 4), cv::Range(img1.cols / 4, img1.cols * 3 / 4));
-        int interval = 5;
+        int interval = 3;
         int row = ig1.rows / interval + ((ig1.rows % interval) > 0 ? 1 : 0);
         int col = ig1.cols / interval + ((ig1.rows % interval) > 0 ? 1 : 0);
         std::vector<std::vector<int>> arr(row, std::vector<int>(col, 0));
