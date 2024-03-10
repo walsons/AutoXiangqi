@@ -391,6 +391,13 @@ namespace axq
         {
             IPC::GetIPC().Write("ucinewgame");
             m_InputFen = Fen();
+            for (int i = 0; i < 10; ++i)
+            {
+                for (int j = 0; j < 9; ++j)
+                {
+                    boardPointInfo[i][j].img = cv::Mat();
+                }
+            }
             MakeNewBlankPieceFingerPrint();
         }
         std::string fen;

@@ -409,8 +409,19 @@ namespace axq
 			if (pos != std::string::npos && (pos + std::string("bestmove xxxx").size() <= output.size()))
 			{
 				bestMove = output.substr(pos + std::string("bestmove ").size(), std::string("xxxx").size());
-				m_FenGen.m_InputFen.push(bestMove);
-				break;
+				if (bestMove[0] >= 'a' && bestMove[0] <= 'i' &&
+					bestMove[1] >= '0' && bestMove[1] <= '9' &&
+					bestMove[2] >= 'a' && bestMove[2] <= 'i' &&
+					bestMove[3] >= '0' && bestMove[3] <= '9')
+				{
+					m_FenGen.m_InputFen.push(bestMove);
+					break;
+				}
+				else
+				{
+					m_FenGen.m_InputFen = Fen();
+					return;
+				}
 			}
 		}
 		if (fen[fen.size() - std::string("b - - 0 1").size()] == 'b')
