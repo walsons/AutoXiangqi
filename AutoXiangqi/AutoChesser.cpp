@@ -580,6 +580,10 @@ namespace axq
 		Sleep(500);
 		SendMessage(gameWindow, WM_LBUTTONDOWN, 0, to.x - rect.left + ((to.y - rect.top) << 16));
 		SendMessage(gameWindow, WM_LBUTTONUP, 0, to.x - rect.left + ((to.y - rect.top) << 16));
+		// Ensure piece move to destination
+		Sleep(100);
+		SendMessage(gameWindow, WM_LBUTTONDOWN, 0, to.x - rect.left + ((to.y - rect.top) << 16));
+		SendMessage(gameWindow, WM_LBUTTONUP, 0, to.x - rect.left + ((to.y - rect.top) << 16));
 	}
 
 	void AutoChesser::MovePieceByMouse(POINT from, POINT to)
@@ -589,6 +593,9 @@ namespace axq
 		Sleep(500);
 		SetCursorPos(to.x, to.y);
 		mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+		// Ensure piece move to destination
+		Sleep(100);
+		mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 	}
 
 	void AutoChesser::MovePieceLikeHuman(POINT from, POINT to)
@@ -597,6 +604,9 @@ namespace axq
 		mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 		Sleep(500);
 		ImitateHumanMove(to);
+		mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+		// Ensure piece move to destination
+		Sleep(100);
 		mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 	}
 
