@@ -1,5 +1,0 @@
-m_ScreenShotTopLeft=6,199
-m_ScreenShotBottomRight=465,699
-m_GameTimerTopLeft=214,788
-m_GameTimerBottomRight=251,830
-gameWindowPoint=301,574

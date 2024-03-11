@@ -1,5 +1,0 @@
-GameWindowClassName=Qt5156QWindowIcon
-ChessBoardTopLeft=6,199
-ChessBoardBottomRight=465,699
-GameTimerTopLeft=216,789
-GameTimerBottomRight=253,828

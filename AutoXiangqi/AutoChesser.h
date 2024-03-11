@@ -22,37 +22,28 @@ namespace axq
 	class AutoChesser
 	{
 	public:
-		AutoChesser(ChessEngine* chessEngine, const std::string& settingFileName = "setting.txt");
-
-		template <typename Engine>
-		AXQResult ConfigureEngine(ChessEngine& engine);
-
-		AXQResult ConfigureSetting();
-
+		AutoChesser(const std::string& settingFileName = "setting.txt");
 		AXQResult Run(RunType runType);
 
 	private:
-        AXQResult UpdateConfigMember();
+		// Option function
 		AXQResult GetGameWindowClassName();
 		AXQResult LocateChessBoard(bool topLeft);
 		AXQResult LocateGameTimer(bool topLeft);
 		AXQResult RecordPieceAppearance();
 		AXQResult RecordTimerAppearance();
-        AXQResult SetGameWindowPosition();
 		AXQResult SaveConfig();
+        AXQResult SetGameWindowPosition();
         AXQResult AutoPlayChess();
+		
+	private:
+		template <typename Engine>
+		AXQResult ConfigureEngine(ChessEngine& engine);
+		AXQResult UpdateConfigMember();
 		AXQResult InvokeConfig();
-
-
-		AXQResult SetGameWindowPos();
-		AXQResult AnalyzeChessBoard();
-		AXQResult LocateGameTimer();
-		AXQResult LocateWindow();
-		int FenSymbol(const std::string& fen);
-
 		void CheckMyTurn(int interval, RunType runType);
+		int FenSymbol(const std::string& fen);
 		void MovePiece(RunType runType);
-
 		void MovePieceByMessage(POINT from, POINT to);
 		void MovePieceByMouse(POINT from, POINT to);
 		void MovePieceLikeHuman(POINT from, POINT to);
@@ -86,7 +77,9 @@ namespace axq
 		std::atomic<bool> m_MyTurn = false;
 		std::atomic<bool> m_KeepCheck = false;
 		std::string m_LastFen = "b - - 0 1";
-		ChessEngine* m_Engine;
+		ChessEngine* m_Engine = nullptr;
+
+		RunType m_RunType = RunType::MOVE_PIECE_BY_MESSAGE;;
 	};
 
 	template <>
@@ -102,14 +95,18 @@ namespace axq
 		engineOutput[readBytes] = '\0';
 		std::cout << "Engine Info: " << engineOutput << std::endl;
 
-		ipc.Write("uci");
+		ipc.Write("setoption name Debug Log File value engine_log.txt");
+		ipc.Write("setoption name Threads value 6");
+		ipc.Write("setoption name Hash value 512");
+		ipc.Write("setoption name Ponder value false");
+		ipc.Write("setoption name MultiPV value 1");
+		ipc.Write("setoption name Move Overhead value 10");
+		ipc.Write("setoption name EvalFile value pikafish.nnue");
 
+		ipc.Write("uci");
 		ipc.Read(engineOutput, BuffSize, readBytes);
 		engineOutput[readBytes] = '\0';
 		std::cout << "Engine Info: " << engineOutput << std::endl;
-
-		ipc.Write("setoption name Threads value 4");
-		ipc.Write("setoption name EvalFile value pikafish.nnue");
 
 		// Game start
 		ipc.Write("ucinewgame");

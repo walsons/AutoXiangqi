@@ -32,21 +32,9 @@ int main()
 	std::cout << t.push("i3i4").push("d9e8").GetReal() << std::endl;
 	std::cout << t.GetReal() << std::endl;*/
 
-	/*axq::ChessEngine* engine = new axq::Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
-	engine->InitEngine();
-	auto ret = engine->Run();
-	if (ret != axq::AXQResult::ok)
-		return ErrorExit("engine.run()");*/
 
-	/*axq::AutoChesser autoChesser(engine);
-	ret = autoChesser.ConfigureEngine<axq::Pikafish>(*engine);
-	if (ret != axq::AXQResult::ok)
-		return ErrorExit("autoChesser.ConfigureEngine<axq::Pikafish>(engine, ipc)");
-	ret = autoChesser.ConfigureSetting();
-	if (ret != axq::AXQResult::ok)
-		return ErrorExit("autoChesser.ConfigureSetting()");*/
-	// autoChesser.activeBash = true;
-    axq::AutoChesser autoChesser(nullptr);
+	//autoChesser.activeBash = true;
+    axq::AutoChesser autoChesser;
 	autoChesser.Run(axq::RunType::MOVE_PIECE_BY_MESSAGE);
 
 	//auto ipc = axq::IPC::GetIPC();
