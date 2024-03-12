@@ -17,4 +17,27 @@ namespace axq
     {
         return std::string(str.begin(), str.end());
     }
+
+    bool IsIdenticalImage(cv::Mat image1, cv::Mat image2, int threshold)
+    {
+        if (image1.size() == image2.size())
+        {
+            unsigned long long diff = 0;
+            for (int i = 0; i < image1.rows; ++i)
+            {
+                for (int j = 0; j < image1.cols; ++j)
+                {
+                    diff += abs(image1.at<uchar>(i, j) - image2.at<uchar>(i, j));
+                }
+                if (diff > threshold)
+                    return false;
+            }
+            return true;
+        }
+        else
+        {
+            std::cout << "Two images have different size" << std::endl;
+        }
+        return false;
+    }
 }

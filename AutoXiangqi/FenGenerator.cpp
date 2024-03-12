@@ -1,5 +1,7 @@
 #include "FenGenerator.h"
 #include "IPC.h"
+#include "Tools.h"
+
 #include <Windows.h>
 #include <wingdi.h>
 #include <fstream>
@@ -191,6 +193,28 @@ namespace axq
         gameTimerShot = SnippingGray(NULL, m_GameTimerTopLeft, m_GameTimerBottomRight).clone();
     }
 
+    void FenGenerator::WaitAnimationOver()
+    {
+        cv::Mat last = SnippingGray(NULL, { m_GameTimerTopLeft.x + boardCoordinate[4][3].x, m_GameTimerTopLeft.y + boardCoordinate[4][3].y },
+            { m_GameTimerBottomRight.x + boardCoordinate[5][5].x, m_GameTimerBottomRight.y + boardCoordinate[5][5].y });
+        int loop = 0;
+        while (true)
+        {
+            Sleep(200);
+            cv::Mat next = SnippingGray(NULL, { m_GameTimerTopLeft.x + boardCoordinate[4][3].x, m_GameTimerTopLeft.y + boardCoordinate[4][3].y },
+                { m_GameTimerBottomRight.x + boardCoordinate[5][5].x, m_GameTimerBottomRight.y + boardCoordinate[5][5].y });
+            if (IsIdenticalImage(last, next, 5 * last.rows * last.cols))
+            {
+                break;
+            }
+            if (++loop >= 10)
+            {
+                std::cout << "Wait animation over for 2s" << std::endl;
+                break;
+            }
+        }
+    }
+
 	void FenGenerator::MakePieceFingerPrint(cv::Mat boardScreenShot)
 	{
         SetBoardCoordinate(boardScreenShot);
@@ -310,10 +334,6 @@ namespace axq
         GameTimerShot(img);
         cv::Mat origin = cv::imread("GameTimerPhoto.png", 0);
         int outScore = SimilarityScore(img, origin);
-        /*cv::imshow("ll", img);
-        cv::waitKey();
-        cv::imshow("Pp", origin);
-        cv::waitKey();*/
         assert(img.rows == origin.rows);
         assert(img.cols == origin.cols);
         int score = 0;

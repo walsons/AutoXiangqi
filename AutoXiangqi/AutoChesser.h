@@ -19,68 +19,62 @@ namespace axq
 		MOVE_PIECE_LIKE_HUMAN
 	};
 
-	class AutoChesser
-	{
-	public:
-		AutoChesser(const std::string& settingFileName = "setting.txt");
-		AXQResult Run(RunType runType);
+    class AutoChesser
+    {
+    public:
+        AutoChesser(const std::string& settingFileName = "setting.txt");
+        AXQResult Run();
 
-	private:
-		// Option function
-		AXQResult GetGameWindowClassName();
-		AXQResult LocateChessBoard(bool topLeft);
-		AXQResult LocateGameTimer(bool topLeft);
-		AXQResult RecordPieceAppearance();
-		AXQResult RecordTimerAppearance();
-		AXQResult SaveConfig();
+    private:
+        // Option function
+        AXQResult GetGameWindowClassName();
+        AXQResult LocateChessBoard(bool topLeft);
+        AXQResult LocateGameTimer(bool topLeft);
+        AXQResult RecordPieceAppearance();
+        AXQResult RecordTimerAppearance();
+        AXQResult SaveConfig();
         AXQResult SetGameWindowPosition();
         AXQResult AutoPlayChess();
-		
-	private:
-		template <typename Engine>
-		AXQResult ConfigureEngine(ChessEngine& engine);
-		AXQResult UpdateConfigMember();
-		AXQResult InvokeConfig();
-		void CheckMyTurn(int interval, RunType runType);
-		int FenSymbol(const std::string& fen);
-		void MovePiece(RunType runType);
-		void MovePieceByMessage(POINT from, POINT to);
-		void MovePieceByMouse(POINT from, POINT to);
-		void MovePieceLikeHuman(POINT from, POINT to);
-		void ImitateHumanMove(POINT destination, int sleepTime = 10, long stepSize = 5);
 
-	public:
-		FenGenerator m_FenGen;
-		HWND gameWindow = nullptr;
-		HWND bashWindow = nullptr;
-		bool activeBash = false;
-		RECT windowRect = { 0, 0, 0, 0 };
+    private:
+        template <typename Engine>
+        AXQResult ConfigureEngine(ChessEngine& engine);
+        AXQResult UpdateConfigMember();
+        AXQResult InvokeConfig();
+        void CheckMyTurn(int interval, RunType runType);
+        int FenSymbol(const std::string& fen);
+        AXQResult MovePiece(RunType runType);
+        void MovePieceByMessage(POINT from, POINT to);
+        void MovePieceByMouse(POINT from, POINT to);
+        void MovePieceLikeHuman(POINT from, POINT to);
+        void ImitateHumanMove(POINT destination, int sleepTime = 10, long stepSize = 5);
 
-	private:
-		std::unordered_map<std::string, std::string> m_Config;
+    public:
+        FenGenerator m_FenGen;
+        bool m_ActiveBash = false;
+
+    private:
+        std::string m_SettingFileName;
+        std::fstream m_RW;
         std::string m_ConfigFileName = "Config.txt";
+        std::unordered_map<std::string, std::string> m_Config;
+        RunType m_RunType = RunType::MOVE_PIECE_BY_MESSAGE;
+        ChessEngine* m_Engine = nullptr;
+        std::atomic<bool> m_KeepCheck = false;
+        std::future<void> m_AutoPlayChessThread;
+
         std::string m_GameWindowClassName;
-        HWND m_GameWindow = nullptr;
         POINT m_ChessBoardTopLeft;
         POINT m_ChessBoardBottomRight;
         POINT m_GameTimerTopLeft;
         POINT m_GameTimerBottomRight;
         std::string m_ChessBoardPhotoFileName = "ChessBoardPhoto.png";
         std::string m_GameTimerPhotoFileName = "GameTimerPhoto.png";
-        std::future<void> m_AutoPlayChessThread;
+        HWND m_GameWindow = nullptr;
 
-		char engineOutput[BuffSize + 1];
-		std::fstream m_RW;
-		bool m_ReadSetting = false;
-		std::string m_SettingFileName;
-		std::unordered_map<std::string, std::string> m_Settings;
-		std::atomic<bool> m_MyTurn = false;
-		std::atomic<bool> m_KeepCheck = false;
-		std::string m_LastFen = "b - - 0 1";
-		ChessEngine* m_Engine = nullptr;
 
-		RunType m_RunType = RunType::MOVE_PIECE_BY_MESSAGE;;
-	};
+        char engineOutput[BuffSize + 1];
+    };
 
 	template <>
 	inline AXQResult AutoChesser::ConfigureEngine<Pikafish>(ChessEngine& engine)

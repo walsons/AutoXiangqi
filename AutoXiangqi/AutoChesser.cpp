@@ -10,7 +10,7 @@ namespace axq
 	{
 	}
 
-	AXQResult AutoChesser::Run(RunType runType)
+	AXQResult AutoChesser::Run()
 	{
 		// Config
 		std::cout << "1. Get game window class name:" << std::endl;
@@ -149,7 +149,7 @@ namespace axq
 			else if (cmd == "a")
 			{
 				m_KeepCheck = true;
-				fu = std::async(&AutoChesser::CheckMyTurn, this, 1000, runType);
+				fu = std::async(&AutoChesser::CheckMyTurn, this, 1000, m_RunType);
 			}
 			else if (cmd == "q")
 			{
@@ -157,7 +157,7 @@ namespace axq
 			}
 			else if (cmd == "n" || cmd == "'")  // next
 			{
-				MovePiece(runType);
+				MovePiece(m_RunType);
 			}
 			else if (cmd == "blank")
 			{
@@ -286,9 +286,9 @@ namespace axq
 			}
 		}
 
-		m_FenGen.m_InputFen = Fen();
+        m_FenGen.m_InputFen = Fen();
         m_KeepCheck = true;
-        m_AutoPlayChessThread = std::async(&AutoChesser::CheckMyTurn, this, 1000, RunType::MOVE_PIECE_BY_MESSAGE);
+        m_AutoPlayChessThread = std::async(&AutoChesser::CheckMyTurn, this, 1000, m_RunType);
 
         return AXQResult::ok;
     }
@@ -348,11 +348,15 @@ namespace axq
 	{
 		while (m_KeepCheck)
 		{
-			m_MyTurn = m_FenGen.IsMyTurn();
-			if (m_MyTurn)
+			if (m_FenGen.IsMyTurn())
 			{
-				Sleep(1000);
-				MovePiece(runType);
+				//Sleep(1000);
+				m_FenGen.WaitAnimationOver();
+				std::cout << "Animation over" << std::endl;
+				if (MovePiece(runType) == AXQResult::fail)
+				{
+					Sleep(1000);
+				}
 			}
 			else
 				Sleep(interval);
@@ -418,7 +422,7 @@ namespace axq
 		return symbol;
 	}
 
-	void AutoChesser::MovePiece(RunType runType)
+	AXQResult AutoChesser::MovePiece(RunType runType)
 	{
 		// Scan board to fen
 		std::string fen = m_FenGen.GenerateFen();
@@ -426,20 +430,20 @@ namespace axq
 		if (fen.empty())
 		{
 			m_FenGen.m_InputFen = Fen();
-			return;
+			return AXQResult::fail;
 		}
 		int symbol1 = FenSymbol(fen);
 		int symbol2 = FenSymbol(m_FenGen.m_InputFen.GetReal());
 		std::cout << "symbol1: " << symbol1 << ",   " << "symbol2: " << symbol2 << std::endl;
 		if (symbol1 != symbol2)
 		{
-			Sleep(1800);
+			//Sleep(1800);
 			//std::cout << "symbol1: " << symbol1 << ",   " << "symbol2: " << symbol2 << std::endl;
 			fen = m_FenGen.GenerateFen();
 			if (fen.empty())
 			{
 				m_FenGen.m_InputFen = Fen();
-				return;
+				return AXQResult::fail;
 			}
 			m_FenGen.m_InputFen = Fen(fen);
 		}
@@ -476,17 +480,17 @@ namespace axq
 				if (ret != AXQResult::ok)
 				{
 					std::cout << "start engine failed" << std::endl;
-					return;
+					return AXQResult::fail;
 				}
 				ret = ConfigureEngine<Pikafish>(*m_Engine);
 				if (ret != AXQResult::ok)
 				{
 					std::cout << "start engine failed" << std::endl;
-					return;
+					return AXQResult::fail;
 				}
 				std::cout << "Engine restart" << std::endl;
 				m_FenGen.m_InputFen = Fen();
-				return;
+				return AXQResult::fail;
 			}
 
 			DWORD readBytes = 0;
@@ -511,7 +515,7 @@ namespace axq
 				else
 				{
 					m_FenGen.m_InputFen = Fen();
-					return;
+					return AXQResult::fail;
 				}
 			}
 		}
@@ -554,7 +558,7 @@ namespace axq
 			break;
 		}
 
-		if (activeBash)
+		if (m_ActiveBash)
 		{
 			// give some time for mouse event to change active window
 			Sleep(500);
@@ -568,6 +572,7 @@ namespace axq
 		}
 		// give time to game to play animation
 		Sleep(2500);
+		return AXQResult::ok;
 	}
 
 	void AutoChesser::MovePieceByMessage(POINT from, POINT to)

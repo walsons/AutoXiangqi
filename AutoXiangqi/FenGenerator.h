@@ -22,6 +22,7 @@ namespace axq
         void SnippingChessBoard(cv::Mat& chessBoardShot, HWND gameWindow);
 		void BoardScreenShot(cv::Mat& boardScreenShot);
 		void GameTimerShot(cv::Mat& gameTimerShot);
+		void WaitAnimationOver();
 		void MakePieceFingerPrint(cv::Mat boardScreenShot);
 		void MakeNewBlankPieceFingerPrint();
 		bool IsMyTurn();
