@@ -3,6 +3,9 @@
 
 #include <future>
 
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
+
 namespace axq
 {
 	AutoChesser::AutoChesser(const std::string& settingFileName)
@@ -12,6 +15,25 @@ namespace axq
 
 	AXQResult AutoChesser::Run()
 	{
+        /********** spdlog example **********/
+        spdlog::level::level_enum spdLevel = spdlog::level::debug;
+        
+        spdlog::set_level(spdLevel);
+        spdlog::flush_on(spdLevel);
+        spdlog::debug("Hello, {}!", "World");
+        spdlog::info("Hello, {}!", "World");
+        spdlog::log(spdlog::level::err, "Hello, {}!", "World");
+
+        auto logger = spdlog::basic_logger_mt("logger", "logs/axq_log.txt");
+        logger->set_level(spdLevel);
+        logger->flush_on(spdLevel);
+        logger->debug("debug message");
+        logger->info("info message");
+        logger->warn("warn message");
+        logger->error("error message");
+        logger->log(spdlog::level::err, "error message");
+        /************************************/
+
 		// Config
 		std::cout << "1. Get game window class name:" << std::endl;
 		std::cout << "\tPut the mouse cursor in the game window and and input \"cn\"(class name)" << std::endl;
