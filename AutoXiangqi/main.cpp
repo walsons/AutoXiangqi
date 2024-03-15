@@ -7,6 +7,5 @@ int main()
     //autoChesser.m_ActiveBash = true;
     autoChesser.Run();
 
-    //system("pause");
     return 0;
 }

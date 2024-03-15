@@ -30,8 +30,10 @@ namespace axq
         AXQResult GetGameWindowClassName();
         AXQResult LocateChessBoard(bool topLeft);
         AXQResult LocateGameTimer(bool topLeft);
+        AXQResult LocateNextGameButton(bool topLeft);
         AXQResult RecordPieceAppearance();
         AXQResult RecordTimerAppearance();
+        AXQResult RecordNextGameButtonAppearance();
         AXQResult SaveConfig();
         AXQResult SetGameWindowPosition();
         AXQResult AutoPlayChess();
@@ -64,12 +66,15 @@ namespace axq
         std::future<void> m_AutoPlayChessThread;
 
         std::string m_GameWindowClassName;
-        POINT m_ChessBoardTopLeft;
-        POINT m_ChessBoardBottomRight;
-        POINT m_GameTimerTopLeft;
-        POINT m_GameTimerBottomRight;
+        POINT m_ChessBoardTopLeft = { 0, 0 };
+        POINT m_ChessBoardBottomRight = { 0, 0 };
+        POINT m_GameTimerTopLeft = { 0, 0 };
+        POINT m_GameTimerBottomRight = { 0, 0 };
+        POINT m_OneMoreGameTopLeft = { 0, 0 };
+        POINT m_OneMoreGameBottomRight = { 0, 0 };
         std::string m_ChessBoardPhotoFileName = "ChessBoardPhoto.png";
         std::string m_GameTimerPhotoFileName = "GameTimerPhoto.png";
+        std::string m_NextGamePhotoFileName = "NextGamePhoto.png";
         HWND m_GameWindow = nullptr;
 
 

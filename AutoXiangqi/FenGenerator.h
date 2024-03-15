@@ -22,6 +22,8 @@ namespace axq
         void SnippingChessBoard(cv::Mat& chessBoardShot, HWND gameWindow);
 		void BoardScreenShot(cv::Mat& boardScreenShot);
 		void GameTimerShot(cv::Mat& gameTimerShot);
+        void OneMoreGameShot(cv::Mat& oneMoreGameShot);
+        void OneMoreGameCheck();
 		void WaitAnimationOver();
 		void MakePieceFingerPrint(cv::Mat boardScreenShot);
 		void MakeNewBlankPieceFingerPrint();
@@ -45,6 +47,8 @@ namespace axq
 		POINT boardCoordinate[10][9];
 		POINT m_GameTimerTopLeft = { 0, 0 };
 		POINT m_GameTimerBottomRight = { 0, 0 };
+        POINT m_OneMoreGameTopLeft = { 0, 0 };
+        POINT m_OneMoreGameBottomRight = { 0, 0 };
 		long boardTop = 0x0FFFFFFF;
 		long boardLeft = 0x0FFFFFFF;
 		long boardBottom = 0;

@@ -62,6 +62,12 @@ namespace axq
 		std::cout << "\t2. Input r2 to move piece by mouse" << std::endl;
 		std::cout << "\t3. Input r3 to move piece like human" << std::endl;
 		std::cout << "Input \"a\"(auto) to move chess automatically without command, input \"q\" to quit" << std::endl;
+        // Optional
+        std::cout << "o1. Locate \"one more game\" button:" << std::endl;
+        std::cout << "\tPut the mouse cursor in the timer top left and input \"otl\"(one more game button top left)" << std::endl;
+        std::cout << "\tPut the mouse cursor in the timer bottom right and input \"obr\"(one more game button bottom right)" << std::endl;
+        std::cout << "o2. Record one more game button appearance:" << std::endl;
+        std::cout << "\tInput \"ro\"(record one more game button)" << std::endl;
 
 		// Read settings
 		m_RW.open(m_ConfigFileName, std::ios::in);
@@ -152,6 +158,20 @@ namespace axq
 			{
 				m_KeepCheck = false;
 			}
+            else if (cmd == "otl")
+            {
+                LocateNextGameButton(true);
+                UpdateConfigMember();
+            }
+            else if (cmd == "obr")
+            {
+                LocateNextGameButton(false);
+                UpdateConfigMember();
+            }
+            else if (cmd == "ro")
+            {
+				RecordNextGameButtonAppearance();
+            }
 		}
 
 		auto& ipc = IPC::GetIPC();
@@ -239,6 +259,22 @@ namespace axq
 		return AXQResult::ok;
 	}
 
+    AXQResult AutoChesser::LocateNextGameButton(bool topLeft)
+    {
+        POINT pos;
+        if (topLeft)
+        {
+            GetCursorPos(&pos);
+            m_Config["OneMoreGameTopLeft"] = std::to_string(pos.x) + "," + std::to_string(pos.y);
+        }
+        else
+        {
+            GetCursorPos(&pos);
+            m_Config["OneMoreGameBottomRight"] = std::to_string(pos.x) + "," + std::to_string(pos.y);
+        }
+        return AXQResult::ok;
+    }
+
 	AXQResult AutoChesser::RecordPieceAppearance()
 	{
 		cv::Mat chessBoardPhoto;
@@ -254,6 +290,14 @@ namespace axq
 		cv::imwrite(m_GameTimerPhotoFileName, gameTimerPhoto);
 		return AXQResult::ok;
 	}
+
+    AXQResult AutoChesser::RecordNextGameButtonAppearance()
+    {
+        cv::Mat nextGamePhoto;
+        m_FenGen.OneMoreGameShot(nextGamePhoto);
+        cv::imwrite(m_NextGamePhotoFileName, nextGamePhoto);
+        return AXQResult::ok;
+    }
 
     AXQResult AutoChesser::SetGameWindowPosition()
     {
@@ -339,6 +383,10 @@ namespace axq
 			m_GameTimerTopLeft = parsePoint(m_Config["GameTimerTopLeft"]);
 		if (m_Config.find("GameTimerBottomRight") != m_Config.end())
 			m_GameTimerBottomRight = parsePoint(m_Config["GameTimerBottomRight"]);
+        if (m_Config.find("OneMoreGameTopLeft") != m_Config.end())
+            m_OneMoreGameTopLeft = parsePoint(m_Config["OneMoreGameTopLeft"]);
+        if (m_Config.find("OneMoreGameBottomRight") != m_Config.end())
+            m_OneMoreGameBottomRight = parsePoint(m_Config["OneMoreGameBottomRight"]);
 
 		InvokeConfig();
 
@@ -352,6 +400,9 @@ namespace axq
 
 		m_FenGen.m_GameTimerTopLeft = m_GameTimerTopLeft;
 		m_FenGen.m_GameTimerBottomRight = m_GameTimerBottomRight;
+
+        m_FenGen.m_OneMoreGameTopLeft = m_OneMoreGameTopLeft;
+        m_FenGen.m_OneMoreGameBottomRight = m_OneMoreGameBottomRight;
 
 		cv::Mat chessBoardShot = cv::imread(m_ChessBoardPhotoFileName, cv::IMREAD_GRAYSCALE);
 		if (chessBoardShot.data == nullptr)
@@ -372,13 +423,14 @@ namespace axq
 		{
 			if (m_FenGen.IsMyTurn())
 			{
-				//Sleep(1000);
 				m_FenGen.WaitAnimationOver();
 				std::cout << "Animation over" << std::endl;
 				if (MovePiece(runType) == AXQResult::fail)
 				{
 					Sleep(1000);
 				}
+                // Check "one more game" buttion
+				m_FenGen.OneMoreGameCheck();
 			}
 			else
 				Sleep(interval);
@@ -479,6 +531,7 @@ namespace axq
 		ipc.Write("position fen " + m_FenGen.m_InputFen.Get());
 		std::cout << (m_FenGen.m_InputFen.Get()) << std::endl;
 		std::cout << (m_FenGen.m_InputFen.GetReal()) << std::endl;
+		ipc.Write("d");
 		ipc.Write("go depth 15");
 
 

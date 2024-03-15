@@ -193,6 +193,32 @@ namespace axq
         gameTimerShot = SnippingGray(NULL, m_GameTimerTopLeft, m_GameTimerBottomRight).clone();
     }
 
+    void FenGenerator::OneMoreGameShot(cv::Mat& oneMoreGameShot)
+    {
+        oneMoreGameShot = SnippingGray(NULL, m_OneMoreGameTopLeft, m_OneMoreGameBottomRight).clone();
+    }
+
+    void FenGenerator::OneMoreGameCheck()
+    {
+        if (m_OneMoreGameTopLeft.x == 0 || m_OneMoreGameTopLeft.y == 0 || 
+            m_OneMoreGameBottomRight.x == 0 || m_OneMoreGameBottomRight.y == 0)
+            return;
+        cv::Mat oneMoreGameShot = SnippingGray(NULL, m_OneMoreGameTopLeft, m_OneMoreGameBottomRight).clone();
+        cv::Mat origin = cv::imread("NextGamePhoto.png", 0);
+        if (IsIdenticalImage(origin, oneMoreGameShot, 5 * origin.cols * origin.rows))
+        {
+            Sleep(3000);
+            auto gameWindow = WindowFromPoint({ (m_ScreenShotTopLeft.x + m_ScreenShotBottomRight.x) / 2, (m_ScreenShotTopLeft.y + m_ScreenShotBottomRight.y) / 2 });
+            RECT rect;
+            GetWindowRect(gameWindow, &rect);
+            long x = (m_OneMoreGameTopLeft.x + m_OneMoreGameBottomRight.x) / 2;
+            long y = (m_OneMoreGameTopLeft.y + m_OneMoreGameBottomRight.y) / 2;
+            POINT click{ x - rect.left, y - rect.top };
+            SendMessage(gameWindow, WM_LBUTTONDOWN, 0, click.x + (click.y << 16));
+            SendMessage(gameWindow, WM_LBUTTONUP, 0, click.x + (click.y << 16));
+        }
+    }
+
     void FenGenerator::WaitAnimationOver()
     {
         cv::Mat last = SnippingGray(NULL, { m_GameTimerTopLeft.x + boardCoordinate[4][3].x, m_GameTimerTopLeft.y + boardCoordinate[4][3].y },
