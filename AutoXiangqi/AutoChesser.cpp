@@ -1,5 +1,6 @@
 #include "AutoChesser.h"
 #include "Tools.h"
+#include "Logger.h"
 
 #include <future>
 
@@ -15,24 +16,9 @@ namespace axq
 
 	AXQResult AutoChesser::Run()
 	{
-        /********** spdlog example **********/
-        spdlog::level::level_enum spdLevel = spdlog::level::debug;
-        
-        spdlog::set_level(spdLevel);
-        spdlog::flush_on(spdLevel);
-        spdlog::debug("Hello, {}!", "World");
-        spdlog::info("Hello, {}!", "World");
-        spdlog::log(spdlog::level::err, "Hello, {}!", "World");
-
-        auto logger = spdlog::basic_logger_mt("logger", "logs/axq_log.txt");
-        logger->set_level(spdLevel);
-        logger->flush_on(spdLevel);
-        logger->debug("debug message");
-        logger->info("info message");
-        logger->warn("warn message");
-        logger->error("error message");
-        logger->log(spdlog::level::err, "error message");
-        /************************************/
+		// Logger setting
+		Logger::SetLevel(Logger::Level::debug);
+		Logger::FlushOn(Logger::Level::debug);
 
 		// Config
 		std::cout << "1. Get game window class name:" << std::endl;
@@ -157,6 +143,10 @@ namespace axq
 			else if (cmd == "q")
 			{
 				m_KeepCheck = false;
+			}
+			else if (cmd == "'")
+			{
+				PlayChess();
 			}
             else if (cmd == "otl")
             {
@@ -334,6 +324,7 @@ namespace axq
 
     AXQResult AutoChesser::AutoPlayChess()
     {
+		m_ActiveBash = false;
 		if (m_Engine == nullptr)
 		{
 			m_Engine = new Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
@@ -358,6 +349,30 @@ namespace axq
 
         return AXQResult::ok;
     }
+
+	AXQResult AutoChesser::PlayChess()
+	{
+		m_ActiveBash = true;
+		if (m_Engine == nullptr)
+		{
+			m_Engine = new Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
+			m_Engine->InitEngine();
+			auto ret = m_Engine->Run();
+			if (ret != AXQResult::ok)
+			{
+				std::cout << "Start engine failed" << std::endl;
+				return ret;
+			}
+			ret = ConfigureEngine<Pikafish>(*m_Engine);
+			if (ret != AXQResult::ok)
+			{
+				std::cout << "Configure engine failed" << std::endl;
+				return ret;
+			}
+		}
+
+		MovePiece(m_RunType);
+	}
 
 	AXQResult AutoChesser::UpdateConfigMember()
 	{
@@ -424,7 +439,7 @@ namespace axq
 			if (m_FenGen.IsMyTurn())
 			{
 				m_FenGen.WaitAnimationOver();
-				std::cout << "Animation over" << std::endl;
+				Logger::Log(Logger::Level::debug, "Animation over");
 				if (MovePiece(runType) == AXQResult::fail)
 				{
 					Sleep(1000);
@@ -508,7 +523,7 @@ namespace axq
 		}
 		int symbol1 = FenSymbol(fen);
 		int symbol2 = FenSymbol(m_FenGen.m_InputFen.GetReal());
-		std::cout << "symbol1: " << symbol1 << ",   " << "symbol2: " << symbol2 << std::endl;
+		Logger::Log(Logger::Level::debug, "symbol1: {}, symbol2: {}", symbol1, symbol2);
 		if (symbol1 != symbol2)
 		{
 			//Sleep(1800);
@@ -521,6 +536,12 @@ namespace axq
 			}
 			m_FenGen.m_InputFen = Fen(fen);
 		}
+		else if (m_FenGen.m_LastFenString == fen)
+		{
+			Logger::Log(Logger::Level::err, "Fen is not changed, same as last time");
+			m_FenGen.m_InputFen = Fen();
+			return AXQResult::fail;
+		}
 		else
 		{
 			auto enemyMove = Fen(fen) - m_FenGen.m_InputFen;
@@ -529,11 +550,10 @@ namespace axq
 
 		auto& ipc = IPC::GetIPC();
 		ipc.Write("position fen " + m_FenGen.m_InputFen.Get());
-		std::cout << (m_FenGen.m_InputFen.Get()) << std::endl;
-		std::cout << (m_FenGen.m_InputFen.GetReal()) << std::endl;
+		Logger::Log(Logger::Level::info, "Fen with move is: {}", (m_FenGen.m_InputFen.Get()));
+		Logger::Log(Logger::Level::info, "Fen without move is: {}", (m_FenGen.m_InputFen.GetReal()));
 		ipc.Write("d");
-		ipc.Write("go depth 15");
-
+		ipc.Write("go depth 16");
 
 		std::string bestMove;
 		std::string output;
@@ -584,6 +604,7 @@ namespace axq
 					bestMove[2] >= 'a' && bestMove[2] <= 'i' &&
 					bestMove[3] >= '0' && bestMove[3] <= '9')
 				{
+					m_FenGen.m_LastFenString = m_FenGen.m_InputFen.GetReal();
 					m_FenGen.m_InputFen.push(bestMove);
 					break;
 				}

@@ -227,10 +227,13 @@ public:
         }
         return *this;
     }
+
+public:
+    std::vector<std::string> m_Moves;
+
 private:
     // '0' delegate empty blank grid for convenience
     char b[10][9];
-    std::vector<std::string> m_Moves;
     char real[10][9];
     char color;
 };

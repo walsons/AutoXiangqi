@@ -55,6 +55,7 @@ namespace axq
 		long boardRight = 0;
 		long pieceRadius = 0;
 		Fen m_InputFen = Fen();
+		std::string m_LastFenString;
 
 	private:
 		BoardPointInfo boardPointInfo[10][9];

@@ -1,6 +1,7 @@
 #include "FenGenerator.h"
 #include "IPC.h"
 #include "Tools.h"
+#include "Logger.h"
 
 #include <Windows.h>
 #include <wingdi.h>
@@ -370,7 +371,7 @@ namespace axq
                 score += std::abs(img.at<uchar>(i, j) - origin.at<uchar>(i, j));
             }
         }
-        if (score > 20 * img.rows * img.cols)
+        if (score > 50 * img.rows * img.cols)
             return true;
         return false;
     }
@@ -586,15 +587,15 @@ namespace axq
         t3.join();
         if (fen1.empty() || fen2.empty() || fen3.empty() || m['k'] != 1 || m['K'] != 1)
         {
-            std::cout << "invalid fen is: " << (fen1 + fen2 + fen3) << std::endl;
-            std::cout << "fen1: " << fen1 << " fen2: " << fen2 << "fen3: " << fen3 << std::endl;
+            Logger::Log(Logger::Level::info, "invalid fen is: {}", (fen1 + fen2 + fen3));
+            Logger::Log(Logger::Level::info, "fen1: {}, fen2: {}, fen3: {}", fen1, fen2, fen3);
             return "";
         }
             
         fen = fen1 + fen2 + fen3;
         fen.pop_back();
         clock_t endTime = clock();
-        std::cout << "time cost: " << (endTime - beginTime) << std::endl;
+        Logger::Log(Logger::Level::debug, "time cost: {}", (endTime - beginTime));
         if (color == -1)
             std::reverse(fen.begin(), fen.end());
         // "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR";
@@ -690,13 +691,11 @@ namespace axq
         boardRight = vecFilter.back().back()[0];
         boardBottom = (vecFilter.back().front()[1] + vecFilter.back().back()[1]) / 2;
         boardTop = (vecFilter.front().front()[1] + vecFilter.front().back()[1]) / 2;
-        std::cout << boardTop << " " << boardLeft << " " << boardBottom << " " << boardRight << std::endl;
         for (auto it = vecFilter.front().begin(); it != vecFilter.front().end(); ++it)
         {
             pieceRadius += (*it)[2];
         }
         pieceRadius /= vecFilter.front().size();
-        std::cout << pieceRadius << std::endl;
         
         int hStep = (boardRight - boardLeft) / 8;
         int vStep = (boardBottom - boardTop) / 9;

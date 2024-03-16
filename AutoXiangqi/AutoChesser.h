@@ -37,6 +37,7 @@ namespace axq
         AXQResult SaveConfig();
         AXQResult SetGameWindowPosition();
         AXQResult AutoPlayChess();
+        AXQResult PlayChess();
 
     private:
         template <typename Engine>
