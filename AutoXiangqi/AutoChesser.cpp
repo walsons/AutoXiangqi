@@ -20,9 +20,10 @@ namespace axq
 		Logger::SetLevel(Logger::Level::debug);
 		Logger::FlushOn(Logger::Level::debug);
 
-		// Config
-		std::cout << "1. Get game window class name:" << std::endl;
-		std::cout << "\tPut the mouse cursor in the game window and and input \"cn\"(class name)" << std::endl;
+		// Game window position (required)
+		std::cout << "1. Set the game window in the top right of the desktop" << std::endl;
+		std::cout << "\tPut the mouse in the game window title bar and input \"pos\"(position)" << std::endl;
+		// Config (required)
 		std::cout << "2. Locate chess board:" << std::endl;
 		std::cout << "\tPut the mouse cursor in the board top left and input \"btl\"(board top left)" << std::endl;
 		std::cout << "\tPut the mouse cursor in the board bottom right and input \"bbr\"(board bottom right)" << std::endl;
@@ -35,18 +36,11 @@ namespace axq
 		std::cout << "\tInput \"rt\"(record timer)" << std::endl;
 		std::cout << "6. Save Config:" << std::endl;
 		std::cout << "\tInput \"save\"" << std::endl;
-		// Other setting
-		std::cout << "7. Set the game window in the top right of the desktop" << std::endl;
-		std::cout << "\tPut the mouse in the game window title bar and input \"pos\"(position)" << std::endl;
 		// Exit
 		std::cout << "Exit application:" << std::endl;
 		std::cout << "\tInput exit" << std::endl;
 		std::cout << std::endl;
-		// Main command
-		std::cout << "There are three type to run, default is 1" << std::endl;
-		std::cout << "\t1. Input r1 to move piece by message" << std::endl;
-		std::cout << "\t2. Input r2 to move piece by mouse" << std::endl;
-		std::cout << "\t3. Input r3 to move piece like human" << std::endl;
+		// Automatic command
 		std::cout << "Input \"a\"(auto) to move chess automatically without command, input \"q\" to quit" << std::endl;
         // Optional
         std::cout << "o1. Locate \"one more game\" button:" << std::endl;
@@ -54,6 +48,11 @@ namespace axq
         std::cout << "\tPut the mouse cursor in the timer bottom right and input \"obr\"(one more game button bottom right)" << std::endl;
         std::cout << "o2. Record one more game button appearance:" << std::endl;
         std::cout << "\tInput \"ro\"(record one more game button)" << std::endl;
+		// Move piece type
+		std::cout << "There are three type to run, default is 1" << std::endl;
+		std::cout << "\t1. Input r1 to move piece by message" << std::endl;
+		std::cout << "\t2. Input r2 to move piece by mouse" << std::endl;
+		std::cout << "\t3. Input r3 to move piece like human" << std::endl;
 
 		// Read settings
 		m_RW.open(m_ConfigFileName, std::ios::in);
@@ -70,7 +69,7 @@ namespace axq
 		}
 		else
 		{
-			std::cout << "Setting file doesn't exist, create a new setting file" << std::endl;
+			Logger::Log(Logger::Level::info, "Setting file doesn't exist, create a new setting file");
 			m_RW.open(m_ConfigFileName, std::ios::out);
 		}
 		m_RW.close();
@@ -79,12 +78,7 @@ namespace axq
 		std::string cmd;
 		while (std::cin >> cmd)
 		{
-			if (cmd == "cn")
-			{
-				GetGameWindowClassName();
-				UpdateConfigMember();
-			}
-			else if (cmd == "btl")
+			if (cmd == "btl")
 			{
 				LocateChessBoard(true);
 				UpdateConfigMember();
@@ -384,7 +378,7 @@ namespace axq
 				int y = std::stoi(point.substr(pos + 1));
 				return POINT{ x, y };
 			}
-			std::cout << "Error: Parse point failed" << std::endl;
+			Logger::Log(Logger::Level::err, "Parse point failed");
 			return POINT{ 0, 0 };
 		};
 
