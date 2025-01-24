@@ -95,9 +95,9 @@ namespace axq
 		engineOutput[readBytes] = '\0';
 		std::cout << "Engine Info: " << engineOutput << std::endl;
 
-		ipc.Write("setoption name Debug Log File value engine_log.txt");
+		//ipc.Write("setoption name Debug Log File value engine_log.txt");
 		ipc.Write("setoption name Threads value 6");
-		ipc.Write("setoption name Hash value 512");
+		ipc.Write("setoption name Hash value 256");
 		ipc.Write("setoption name Ponder value false");
 		ipc.Write("setoption name MultiPV value 1");
 		ipc.Write("setoption name Move Overhead value 10");

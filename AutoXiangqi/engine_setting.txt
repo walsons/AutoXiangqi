@@ -1,6 +1,6 @@
-setoption name Debug Log File value engine_log.txt
+# setoption name Debug Log File value engine_log.txt
 setoption name Threads value 6
-setoption name Hash value 512
+setoption name Hash value 256
 setoption name Ponder value false
 setoption name MultiPV value 1
 setoption name Move Overhead value 10
