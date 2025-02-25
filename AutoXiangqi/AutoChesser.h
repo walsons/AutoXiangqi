@@ -12,6 +12,12 @@
 
 namespace axq
 {
+    enum class EngineType
+    {
+        GROWFISH,
+        PIKAFISH
+    };
+
 	enum class RunType
 	{
 		MOVE_PIECE_BY_MESSAGE = 1,
@@ -22,7 +28,7 @@ namespace axq
     class AutoChesser
     {
     public:
-        AutoChesser(const std::string& settingFileName = "setting.txt");
+        AutoChesser(const std::string& settingFileName = "setting.txt", EngineType engineType = EngineType::GROWFISH);
         AXQResult Run();
 
     private:
@@ -55,6 +61,7 @@ namespace axq
     public:
         FenGenerator m_FenGen;
         bool m_ActiveBash = false;
+        EngineType m_EngineType;
 
     private:
         std::string m_SettingFileName;
@@ -95,9 +102,9 @@ namespace axq
 		engineOutput[readBytes] = '\0';
 		std::cout << "Engine Info: " << engineOutput << std::endl;
 
-		ipc.Write("setoption name Debug Log File value engine_log.txt");
+		//ipc.Write("setoption name Debug Log File value engine_log.txt");
 		ipc.Write("setoption name Threads value 6");
-		ipc.Write("setoption name Hash value 512");
+		ipc.Write("setoption name Hash value 256");
 		ipc.Write("setoption name Ponder value false");
 		ipc.Write("setoption name MultiPV value 1");
 		ipc.Write("setoption name Move Overhead value 10");
