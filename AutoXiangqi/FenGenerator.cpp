@@ -465,9 +465,11 @@ namespace axq
                     std::string target;
                     // remove white dot influence
                     int whitePixel = 0;
-                    for (int i = 0; i < onePiece.rows; ++i)
+                    int onePieceRow1_4 = onePiece.rows / 4;
+                    int onePieceCol1_4 = onePiece.cols / 4;
+                    for (int i = onePieceRow1_4; i < onePieceRow1_4 * 3; ++i)
                     {
-                        for (int j = 0; j < onePiece.cols; ++j)
+                        for (int j = onePieceCol1_4; j < onePieceCol1_4 * 3; ++j)
                         {
                             if (onePiece.at<uchar>(i, j) > 245)
                                 whitePixel += 1;
@@ -476,6 +478,8 @@ namespace axq
                     if (whitePixel > 60)
                     {
                         //std::cout << "whitePixel: " << whitePixel << std::endl;
+                        std::cout << "===============white empty piece pos: " << i << ", " << j << std::endl;
+                        cv::imwrite("whitetest.png", onePiece);
                         target = "e1";
                     }
                     else

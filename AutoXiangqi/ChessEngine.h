@@ -30,6 +30,16 @@ namespace axq
         Pikafish(std::string engineName, std::string installPath);
         void InitEngine();
         AXQResult Run();
+        inline static std::string m_Exe = "pikafish_x86-64-vnni256.exe";
+    };
+
+    class Growfish : public ChessEngine
+    {
+    public:
+        Growfish(std::string engineName, std::string installPath);
+        void InitEngine();
+        AXQResult Run();
+        inline static std::string m_Exe = "growfish.exe";
     };
 }
 

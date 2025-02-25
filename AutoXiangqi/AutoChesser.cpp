@@ -9,16 +9,17 @@
 
 namespace axq
 {
-	AutoChesser::AutoChesser(const std::string& settingFileName)
+	AutoChesser::AutoChesser(const std::string& settingFileName, EngineType engineType)
 		: m_SettingFileName(settingFileName)
+		, m_EngineType(engineType)
 	{
 	}
 
 	AXQResult AutoChesser::Run()
 	{
 		// Logger setting
-		Logger::SetLevel(Logger::Level::debug);
-		Logger::FlushOn(Logger::Level::debug);
+		Logger::SetLevel(Logger::Level::info);
+		Logger::FlushOn(Logger::Level::info);
 
 		// Game window position (required)
 		std::cout << "1. Set the game window in the top right of the desktop" << std::endl;
@@ -321,7 +322,10 @@ namespace axq
 		m_ActiveBash = false;
 		if (m_Engine == nullptr)
 		{
-			m_Engine = new Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
+			if (m_EngineType == EngineType::PIKAFISH)
+				m_Engine = new Pikafish("pikafish", Pikafish::m_Exe);
+			else
+				m_Engine = new Growfish("growfish", Growfish::m_Exe);
 			m_Engine->InitEngine();
 			auto ret = m_Engine->Run();
 			if (ret != AXQResult::ok)
@@ -349,7 +353,10 @@ namespace axq
 		m_ActiveBash = true;
 		if (m_Engine == nullptr)
 		{
-			m_Engine = new Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
+			if (m_EngineType == EngineType::PIKAFISH)
+				m_Engine = new Pikafish("pikafish", Pikafish::m_Exe);
+			else
+				m_Engine = new Growfish("growfish", Growfish::m_Exe);
 			m_Engine->InitEngine();
 			auto ret = m_Engine->Run();
 			if (ret != AXQResult::ok)
@@ -546,8 +553,19 @@ namespace axq
 		ipc.Write("position fen " + m_FenGen.m_InputFen.Get());
 		Logger::Log(Logger::Level::info, "Fen with move is: {}", (m_FenGen.m_InputFen.Get()));
 		Logger::Log(Logger::Level::info, "Fen without move is: {}", (m_FenGen.m_InputFen.GetReal()));
-		ipc.Write("d");
-		ipc.Write("go depth 16");
+		auto realFen = m_FenGen.m_InputFen.GetReal();
+		if (m_EngineType == EngineType::GROWFISH)
+		{
+			if (realFen[realFen.size() - std::string("b - - 0 1").size()] == 'b')
+				ipc.Write("dd");
+			else
+				ipc.Write("d");
+		}
+		else
+		{
+			ipc.Write("d");
+		}
+		ipc.Write("go depth 8");
 
 		std::string bestMove;
 		std::string output;
@@ -563,7 +581,10 @@ namespace axq
 					delete m_Engine;
 					m_Engine = nullptr;
 				}
-				m_Engine = new Pikafish("pikafish", "pikafish_x86-64-vnni256.exe");
+				if (m_EngineType == EngineType::PIKAFISH)
+					m_Engine = new Pikafish("pikafish", Pikafish::m_Exe);
+				else
+					m_Engine = new Growfish("growfish", Growfish::m_Exe);
 				m_Engine->InitEngine();
 				auto ret = m_Engine->Run();
 				if (ret != AXQResult::ok)
@@ -593,6 +614,7 @@ namespace axq
 			if (pos != std::string::npos && (pos + std::string("bestmove xxxx").size() <= output.size()))
 			{
 				bestMove = output.substr(pos + std::string("bestmove ").size(), std::string("xxxx").size());
+				std::cout << "self bestMove " << output << std::endl;
 				if (bestMove[0] >= 'a' && bestMove[0] <= 'i' &&
 					bestMove[1] >= '0' && bestMove[1] <= '9' &&
 					bestMove[2] >= 'a' && bestMove[2] <= 'i' &&
