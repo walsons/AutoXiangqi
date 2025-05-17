@@ -376,7 +376,7 @@ namespace axq
         return false;
     }
 
-    bool FenGenerator::IsNewGame(cv::Mat img)
+    bool FenGenerator::IsNewGame(cv::Mat img, char& side)
     {
         //BoardScreenShot(img);
         std::string selfSection;
@@ -418,11 +418,17 @@ namespace axq
         // self is black, but enemy's cannon move to our piece place 
         static const std::string start3 = "pppppccrCbakabnr";
         static const std::string start4 = "pppppccrnbakabCr";
-        if (selfSection == start1 ||
-            selfSection == start2 ||
+        if (selfSection == start1)
+        {
+            side = 'w';
+            std::cout << "Check a new game start" << std::endl;
+            return true;
+        }
+        if (selfSection == start2 ||
             selfSection == start3 ||
             selfSection == start4)
         {
+            side = 'b';
             std::cout << "Check a new game start" << std::endl;
             return true;
         }
@@ -434,7 +440,8 @@ namespace axq
         clock_t beginTime = clock();
         cv::Mat img;
         BoardScreenShot(img);
-        if (IsNewGame(img))
+        char side = 'w';
+        if (IsNewGame(img, side))
         {
             IPC::GetIPC().Write("ucinewgame");
             m_InputFen = Fen();
@@ -478,8 +485,8 @@ namespace axq
                     if (whitePixel > 60)
                     {
                         //std::cout << "whitePixel: " << whitePixel << std::endl;
-                        std::cout << "===============white empty piece pos: " << i << ", " << j << std::endl;
-                        cv::imwrite("whitetest.png", onePiece);
+                        //std::cout << "===============white empty piece pos: " << i << ", " << j << std::endl;
+                        //cv::imwrite("whitetest.png", onePiece);
                         target = "e1";
                     }
                     else

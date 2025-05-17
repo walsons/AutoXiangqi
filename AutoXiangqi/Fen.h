@@ -114,21 +114,25 @@ public:
     std::string operator-(const Fen& fen)
     {
         POINT from = { 0, 0 }, to{ 0, 0 };
+        bool flag1 = false, flag2 = false;
         for (int i = 0; i < 10; ++i)
         {
             for (int j = 0; j < 9; ++j)
             {
                 if ((fen.real[i][j] != '0') && real[i][j] == '0')
                 {
+                    flag1 = true;
                     from = { i, j };
                 }
                 else if (fen.real[i][j] != real[i][j])
                 {
+                    flag2 = true;
                     to = { i, j };
                 }
             }
         }
-
+        if (!flag1 || !flag2)
+            return "invalid";
         std::string move;
         move.push_back(from.y + 'a');
         move.push_back((9 - from.x) + '0');
