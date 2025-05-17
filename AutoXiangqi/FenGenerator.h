@@ -28,7 +28,7 @@ namespace axq
 		void MakePieceFingerPrint(cv::Mat boardScreenShot);
 		void MakeNewBlankPieceFingerPrint();
 		bool IsMyTurn();
-		bool IsNewGame(cv::Mat img);
+		bool IsNewGame(cv::Mat img, char &side);
 		std::string GenerateFen();
 		void CalibrateBoard(bool state);
 

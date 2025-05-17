@@ -435,21 +435,55 @@ namespace axq
 	
 	void AutoChesser::CheckMyTurn(int interval, RunType runType)
 	{
+		bool firstTime = true;
 		while (m_KeepCheck)
 		{
-			if (m_FenGen.IsMyTurn())
+			if (firstTime)
 			{
-				m_FenGen.WaitAnimationOver();
-				Logger::Log(Logger::Level::debug, "Animation over");
-				if (MovePiece(runType) == AXQResult::fail)
+				firstTime = false;
+				fen_cache = m_FenGen.GenerateFen();
+				time_to_move = true;
+			}
+
+			cv::Mat img;
+			m_FenGen.BoardScreenShot(img);
+			char side = 'w';
+			if (m_FenGen.IsNewGame(img, side))
+			{
+				fen_cache = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1";
+				if (side == 'w')
+					time_to_move = true;
+				else
+					time_to_move = false;
+			}
+
+			auto fen = m_FenGen.GenerateFen();
+			if (fen != fen_cache)
+			{
+				if (Fen(fen) - Fen(fen_cache) != "invalid")
+				{
+					fen_cache = fen;
+					time_to_move = true;
+				}
+				if (!time_to_move)
+					Sleep(1000);
+			}
+			if (time_to_move)
+			{
+				time_to_move = false;
+				std::string decidedMove;
+				while (MovePiece(runType, decidedMove) == AXQResult::fail && m_KeepCheck)
 				{
 					Sleep(1000);
 				}
-                // Check "one more game" buttion
-				m_FenGen.OneMoreGameCheck();
+				if (decidedMove != "")
+				{
+					auto f = Fen(fen);
+					f.push(decidedMove);
+					fen_cache = f.GetReal();
+				}
+				Sleep(1000);
 			}
-			else
-				Sleep(interval);
 		}
 	}
 
@@ -512,10 +546,11 @@ namespace axq
 		return symbol;
 	}
 
-	AXQResult AutoChesser::MovePiece(RunType runType)
+	AXQResult AutoChesser::MovePiece(RunType runType, std::string &decidedMove)
 	{
 		// Scan board to fen
 		std::string fen = m_FenGen.GenerateFen();
+
 		// Invalid fen
 		if (fen.empty())
 		{
@@ -622,6 +657,7 @@ namespace axq
 				{
 					m_FenGen.m_LastFenString = m_FenGen.m_InputFen.GetReal();
 					m_FenGen.m_InputFen.push(bestMove);
+					decidedMove = bestMove;
 					break;
 				}
 				else

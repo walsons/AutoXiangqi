@@ -52,7 +52,12 @@ namespace axq
         AXQResult InvokeConfig();
         void CheckMyTurn(int interval, RunType runType);
         int FenSymbol(const std::string& fen);
-        AXQResult MovePiece(RunType runType);
+        AXQResult MovePiece(RunType runType) 
+        {
+            std::string placeholder;
+            return MovePiece(runType, placeholder);
+        }
+        AXQResult MovePiece(RunType runType, std::string& decidedMove);
         void MovePieceByMessage(POINT from, POINT to);
         void MovePieceByMouse(POINT from, POINT to);
         void MovePieceLikeHuman(POINT from, POINT to);
@@ -62,6 +67,9 @@ namespace axq
         FenGenerator m_FenGen;
         bool m_ActiveBash = false;
         EngineType m_EngineType;
+
+        std::string fen_cache;
+        bool time_to_move;
 
     private:
         std::string m_SettingFileName;
