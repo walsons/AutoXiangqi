@@ -466,7 +466,7 @@ namespace axq
 					time_to_move = true;
 				}
 				if (!time_to_move)
-					Sleep(1000);
+					Sleep(1500);
 			}
 			if (time_to_move)
 			{
@@ -474,7 +474,7 @@ namespace axq
 				std::string decidedMove;
 				while (MovePiece(runType, decidedMove) == AXQResult::fail && m_KeepCheck)
 				{
-					Sleep(1000);
+					Sleep(1500);
 				}
 				if (decidedMove != "")
 				{
@@ -482,7 +482,7 @@ namespace axq
 					f.push(decidedMove);
 					fen_cache = f.GetReal();
 				}
-				Sleep(1000);
+				Sleep(1500);
 			}
 		}
 	}
@@ -687,8 +687,8 @@ namespace axq
 		int row2 = '9' - bestMove[3];
 		auto& bc = m_FenGen.boardCoordinate;
 		auto dpi = m_FenGen.GetWindowDpi();
-		POINT from{ bc[row1][col1].x / dpi + m_FenGen.m_ScreenShotTopLeft.x, bc[row1][col1].y / dpi + m_FenGen.m_ScreenShotTopLeft.y };
-		POINT to{ bc[row1][col2].x / dpi + m_FenGen.m_ScreenShotTopLeft.x, bc[row2][col2].y / dpi + m_FenGen.m_ScreenShotTopLeft.y };
+		POINT from{ static_cast<LONG>(bc[row1][col1].x / dpi) + m_FenGen.m_ScreenShotTopLeft.x, static_cast<LONG>(bc[row1][col1].y / dpi) + m_FenGen.m_ScreenShotTopLeft.y };
+		POINT to  { static_cast<LONG>(bc[row1][col2].x / dpi) + m_FenGen.m_ScreenShotTopLeft.x, static_cast<LONG>(bc[row2][col2].y / dpi) + m_FenGen.m_ScreenShotTopLeft.y };
 
 		switch (runType)
 		{
@@ -793,7 +793,7 @@ namespace axq
 		{
 			m -= 2 * step;
 			mArr.push_back(step);
-			long nStep = std::floor(step * rate);
+			long nStep = static_cast<long>(std::floor(step * rate));
 			n -= 2 * nStep;
 			nArr.push_back(nStep);
 			step += stepSize;

@@ -134,10 +134,10 @@ public:
         if (!flag1 || !flag2)
             return "invalid";
         std::string move;
-        move.push_back(from.y + 'a');
-        move.push_back((9 - from.x) + '0');
-        move.push_back(to.y + 'a');
-        move.push_back((9 - to.x) + '0');
+        move.push_back(static_cast<char>(from.y) + 'a');
+        move.push_back(static_cast<char>(9 - from.x) + '0');
+        move.push_back(static_cast<char>(to.y) + 'a');
+        move.push_back(static_cast<char>(9 - to.x) + '0');
         return move;
     }
 
